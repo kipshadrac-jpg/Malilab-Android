@@ -27,6 +27,8 @@ object Mali {
     val Amber = Color(0xFF8A5200)
     val Purple = Color(0xFF7A3DB0)
     val Green = Color(0xFF1F7A4D)
+    val Night = Color(0xFF16202B)
+    val accents = listOf(Teal, Indigo, Pink, Amber, Purple, Green)
 }
 
 private val Scheme = lightColorScheme(
