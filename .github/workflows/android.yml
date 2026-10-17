@@ -1,0 +1,65 @@
+name: Build MaliLab APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build debug APK
+        shell: bash
+        run: gradle assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
+
+      - name: Name the APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk MaliLab-debug.apk
+
+      - name: Publish a release with the APK (download this on your phone)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: MaliLab build ${{ github.run_number }}
+          body: |
+            Debug build ${{ github.run_number }} from commit ${{ github.sha }}.
+            Download **MaliLab-debug.apk** below and open it on your phone to install or update.
+          prerelease: true
+          files: MaliLab-debug.apk
+
+      - name: Keep the APK as a workflow artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaliLab-debug-apk
+          path: MaliLab-debug.apk
+          retention-days: 14
+
+      - name: Summary
+        run: |
+          echo "### Build ${{ github.run_number }} succeeded" >> "$GITHUB_STEP_SUMMARY"
+          echo "Open the **Releases** page of this repository and download MaliLab-debug.apk from the newest build." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Copy the first errors into the run summary
+        if: failure()
+        run: |
+          {
+            echo '### Build failed. First errors:'
+            echo '```'
+            grep -E "^e: |error:|What went wrong|FAILED|Execution failed|Could not" build.log | head -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
