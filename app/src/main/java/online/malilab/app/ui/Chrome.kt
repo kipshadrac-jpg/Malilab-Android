@@ -70,21 +70,6 @@ fun firstItemProgress(state: LazyListState, from: Float, to: Float): Float {
     return progress
 }
 
-/**
- * No header bar: the page simply scrolls up under the phone's status bar. This only softly fades the content
- * into [color] right behind the clock and battery icons, so they stay readable.
- */
-@Composable
-fun StatusFade(color: Color, progress: Float) {
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(top + 16.dp)
-            .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.92f * progress), color.copy(alpha = 0.92f * progress), Color.Transparent))),
-    )
-}
-
 @Composable
 fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f) {
     Box(

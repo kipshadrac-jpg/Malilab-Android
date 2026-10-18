@@ -110,7 +110,6 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
             }
             is DetailState.Ready -> {
                 DetailContent(s.detail, s.offline, listState, onOpenModule)
-                StatusFade(Mali.Cream, progress)
                 BackFab(onBack)
                 PlanFab(
                     onClick = { notesOpen = true },
@@ -207,21 +206,24 @@ private fun DetailContent(d: PlaybookDetail, offline: Boolean, listState: LazyLi
             }
             items(d.modules.size) { i ->
                 val m = d.modules[i]
-                val c = Mali.accents[i % Mali.accents.size]
+                val c = Mali.accentFor(m.slug)
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .background(Color.White)
                         .clickable { onOpenModule(m.slug) }
-                        .height(IntrinsicSize.Min),
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Box(Modifier.width(8.dp).fillMaxHeight().background(c))
-                    Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
-                        Text(m.title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = c)
+                    BookCover(title = m.title, accent = c, width = 92.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(m.title, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
                         if (m.rationale.isNotBlank()) {
                             Spacer(Modifier.height(4.dp))
-                            Text(m.rationale, fontSize = 14.sp, lineHeight = 21.sp, color = Mali.InkSoft)
+                            Text(m.rationale, fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft)
                         }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Open module  →", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = c)
                     }
                 }
             }

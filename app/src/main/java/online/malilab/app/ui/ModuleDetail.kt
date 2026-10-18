@@ -174,7 +174,6 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
                     }
                     item { Spacer(Modifier.height(32.dp)) }
                 }
-                StatusFade(Color.White, progress)
                 BackFab(onBack)
             }
         }

@@ -97,7 +97,6 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
-        StatusFade(Color.White, progress)
     }
 }
 

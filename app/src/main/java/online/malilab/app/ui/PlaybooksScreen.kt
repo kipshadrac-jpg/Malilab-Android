@@ -117,7 +117,6 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
                 }
             }
         }
-        StatusFade(Color.White, progress)
     }
 }
 
