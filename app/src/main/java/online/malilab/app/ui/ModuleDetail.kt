@@ -1,6 +1,5 @@
 package online.malilab.app.ui
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,11 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import online.malilab.app.data.Auth
 import online.malilab.app.data.ModuleDetail
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
@@ -47,16 +46,18 @@ private sealed interface ModState {
 }
 
 @Composable
-fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
+fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(slug) { mutableStateOf<ModState>(ModState.Loading) }
     val accent = Mali.accentFor(slug)
-    val context = LocalContext.current
+    val done = Auth.progress.lessons
     val listState = rememberLazyListState()
     val progress = firstItemProgress(listState, 0.85f, 1f)
 
     BackHandler(enabled = active) { onBack() }
     StatusBarIcons(darkIcons = true, active = active)
+
+    LaunchedEffect(slug) { Auth.loadProgress() }
 
     LaunchedEffect(slug, attempt) {
         state = ModState.Loading
@@ -123,9 +124,38 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
                                         .padding(16.dp),
                                 )
                             }
+                            val total = s.detail.lessons.size
+                            val doneCount = s.detail.lessons.count { it.slug in done }
+                            val finished = total > 0 && doneCount == total
+                            val nextLesson = s.detail.lessons.firstOrNull { it.slug !in done } ?: s.detail.lessons.firstOrNull()
+                            if (total > 0) {
+                                Spacer(Modifier.height(16.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        if (finished) "Module complete" else "$doneCount of $total lessons done",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (finished) Mali.Green else Mali.InkSoft,
+                                    )
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(Mali.Sand.copy(alpha = 0.6f))) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth(doneCount.toFloat() / total)
+                                            .height(8.dp)
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (finished) Mali.Green else accent),
+                                    )
+                                }
+                            }
                             Spacer(Modifier.height(18.dp))
                             Text(
-                                "Start Lesson",
+                                when {
+                                    finished -> "Review lessons"
+                                    doneCount > 0 -> "Continue"
+                                    else -> "Start Lesson"
+                                },
                                 color = Color.White,
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -134,9 +164,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(50))
                                     .background(accent)
-                                    .clickable {
-                                        Toast.makeText(context, "Lessons open in the next update", Toast.LENGTH_SHORT).show()
-                                    }
+                                    .clickable(enabled = nextLesson != null) { nextLesson?.let { onOpenLesson(it.slug) } }
                                     .padding(vertical = 15.dp),
                             )
                             Spacer(Modifier.height(24.dp))
@@ -151,15 +179,27 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
                     }
                     items(s.detail.lessons.size) { i ->
                         val l = s.detail.lessons[i]
+                        val lessonDone = l.slug in done
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenLesson(l.slug) }
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
                             Box(
-                                Modifier.size(38.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f)),
+                                Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(if (lessonDone) Mali.Green else accent.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text("${l.n}", color = accent, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                Text(
+                                    if (lessonDone) "✓" else "${l.n}",
+                                    color = if (lessonDone) Color.White else accent,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 16.sp,
+                                )
                             }
                             Column(Modifier.weight(1f)) {
                                 Text("Lesson ${l.n}", fontSize = 11.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.Bold, color = accent)

@@ -51,8 +51,10 @@ fun HomeShell() {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     var openPlaybook by rememberSaveable { mutableStateOf<String?>(null) }
     var openModule by rememberSaveable { mutableStateOf<String?>(null) }
+    var lessonModule by rememberSaveable { mutableStateOf<String?>(null) }
+    var lessonSlug by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val nothingOpen = openPlaybook == null && openModule == null
+    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null
 
     Box(Modifier.fillMaxSize()) {
         MainScaffold(
@@ -73,7 +75,23 @@ fun HomeShell() {
         }
         val mod = openModule
         if (mod != null) {
-            ModuleDetailScreen(slug = mod, active = true, onBack = { openModule = null })
+            ModuleDetailScreen(
+                slug = mod,
+                active = lessonSlug == null,
+                onBack = { openModule = null },
+                onOpenLesson = { lessonModule = mod; lessonSlug = it },
+            )
+        }
+        val ls = lessonSlug
+        val lm = lessonModule
+        if (ls != null && lm != null) {
+            LessonScreen(
+                moduleSlug = lm,
+                lessonSlug = ls,
+                active = true,
+                onBack = { lessonSlug = null; lessonModule = null },
+                onOpenLesson = { lessonSlug = it },
+            )
         }
     }
 }

@@ -22,6 +22,23 @@ data class PlaybookDetail(
     val modules: List<ModuleRef>,
 )
 
+data class LessonBlock(
+    val type: String,
+    val text: String,
+    val level: Int,
+    val tone: String,
+    val items: List<String>,
+    val ordered: Boolean,
+    val header: List<String>,
+    val rows: List<List<String>>,
+)
+
+data class LessonDetail(val slug: String, val title: String, val summary: String, val blocks: List<LessonBlock>)
+
+data class ModuleProgress(val done: Int, val total: Int, val complete: Boolean)
+
+data class Progress(val lessons: Set<String> = emptySet(), val modules: Map<String, ModuleProgress> = emptyMap())
+
 data class ModuleSummary(val slug: String, val title: String, val description: String, val lessonCount: Int)
 
 data class LessonRef(val n: Int, val slug: String, val title: String, val summary: String)

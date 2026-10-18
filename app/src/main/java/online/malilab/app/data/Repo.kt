@@ -112,6 +112,22 @@ object Repo {
         }
     }
 
+    // ------------------------------------------------------------ lessons
+    suspend fun lesson(slug: String): Loaded<LessonDetail> {
+        val key = "lesson_$slug"
+        try {
+            val body = get("/api/v1/lessons/$slug/")
+            val detail = parseLesson(body)
+            prefs.edit().putString(key, body).apply()
+            return Loaded(detail, false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val saved = prefs.getString(key, null) ?: throw e
+            return Loaded(parseLesson(saved), true)
+        }
+    }
+
     // ------------------------------------------------------------ notes (kept on the phone for now)
     fun notes(slug: String): String = prefs.getString("notes_$slug", "") ?: ""
 
@@ -134,6 +150,30 @@ object Repo {
     }
 
     // ------------------------------------------------------------ parsing
+    private fun strings(a: JSONArray?): List<String> =
+        if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }
+
+    private fun parseLesson(body: String): LessonDetail {
+        val o = JSONObject(body)
+        val arr = o.optJSONArray("blocks") ?: JSONArray()
+        val blocks = (0 until arr.length()).map { i ->
+            val b = arr.getJSONObject(i)
+            val p = b.optJSONObject("payload") ?: JSONObject()
+            val rowsArr = p.optJSONArray("rows")
+            LessonBlock(
+                type = b.optString("type"),
+                text = p.optString("text"),
+                level = p.optInt("level", 2),
+                tone = p.optString("tone", "note"),
+                items = strings(p.optJSONArray("items")),
+                ordered = p.optBoolean("ordered"),
+                header = strings(p.optJSONArray("header")),
+                rows = if (rowsArr == null) emptyList() else (0 until rowsArr.length()).map { r -> strings(rowsArr.optJSONArray(r)) },
+            )
+        }
+        return LessonDetail(o.getString("slug"), o.optString("title"), o.optString("summary"), blocks)
+    }
+
     private fun parseModuleSummary(o: JSONObject) = ModuleSummary(
         slug = o.getString("slug"),
         title = o.optString("title"),

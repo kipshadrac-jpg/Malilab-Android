@@ -332,7 +332,7 @@ fun PlanFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NotesSheet(slug: String, onClose: () -> Unit) {
+fun NotesSheet(slug: String, onClose: () -> Unit) {
     var text by remember { mutableStateOf(Repo.notes(slug)) }
     var saved by remember { mutableStateOf(false) }
     Box(

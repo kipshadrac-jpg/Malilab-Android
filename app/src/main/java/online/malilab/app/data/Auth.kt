@@ -29,6 +29,10 @@ object Auth {
     var email by mutableStateOf("")
         private set
 
+    /** Which lessons this learner has finished, and how far through each module they are. */
+    var progress by mutableStateOf(Progress())
+        private set
+
     fun init(context: Context) {
         prefs = context.getSharedPreferences("malilab_auth", Context.MODE_PRIVATE)
         token = prefs.getString("token", null)
@@ -69,9 +73,38 @@ object Auth {
         try {
             val user = call("GET", "/api/v1/account/me/", null, true).getJSONObject("user")
             rememberEmail(user.optString("email"))
+            loadProgress()
         } catch (e: ApiError) {
             if (e.status == 401) clear()
         }
+    }
+
+    suspend fun loadProgress() {
+        if (token == null) return
+        try {
+            progress = parseProgress(call("GET", "/api/v1/progress/", null, true))
+        } catch (e: ApiError) {
+            if (e.status == 401) clear()
+        }
+    }
+
+    /** Marks one lesson complete on the website and returns the updated progress. */
+    suspend fun completeLesson(slug: String): Progress {
+        val updated = parseProgress(call("POST", "/api/v1/lessons/$slug/complete/", JSONObject(), true))
+        progress = updated
+        return updated
+    }
+
+    private fun parseProgress(o: JSONObject): Progress {
+        val lessons = o.optJSONArray("lessons")
+        val modules = o.optJSONArray("modules")
+        return Progress(
+            lessons = (0 until (lessons?.length() ?: 0)).map { lessons!!.optString(it) }.toSet(),
+            modules = (0 until (modules?.length() ?: 0)).associate { i ->
+                val m = modules!!.getJSONObject(i)
+                m.getString("slug") to ModuleProgress(m.optInt("done"), m.optInt("total"), m.optBoolean("complete"))
+            },
+        )
     }
 
     private fun startSession(json: JSONObject) {
@@ -94,6 +127,7 @@ object Auth {
         prefs.edit().remove("token").remove("email").apply()
         token = null
         email = ""
+        progress = Progress()
         signedIn = false
     }
 

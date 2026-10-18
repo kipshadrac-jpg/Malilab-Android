@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import online.malilab.app.data.Auth
 import online.malilab.app.data.ModuleSummary
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
@@ -103,6 +104,15 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
 @Composable
 private fun ModuleRow(m: ModuleSummary, onOpen: () -> Unit) {
     val accent = Mali.accentFor(m.slug)
+    val progress = Auth.progress.modules[m.slug]
+    val finished = progress?.complete == true
+    val chipColor = if (finished) Mali.Green else accent
+    val chipText = when {
+        finished -> "Completed ✓"
+        progress != null && progress.done > 0 -> "${progress.done} of ${progress.total} lessons"
+        m.lessonCount == 1 -> "1 lesson"
+        else -> "${m.lessonCount} lessons"
+    }
     Column(Modifier.fillMaxWidth().background(Color.White).clickable(onClick = onOpen)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 18.dp),
@@ -117,13 +127,13 @@ private fun ModuleRow(m: ModuleSummary, onOpen: () -> Unit) {
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    if (m.lessonCount == 1) "1 lesson" else "${m.lessonCount} lessons",
+                    chipText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = accent,
+                    color = chipColor,
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(accent.copy(alpha = 0.12f))
+                        .background(chipColor.copy(alpha = 0.12f))
                         .padding(horizontal = 10.dp, vertical = 4.dp),
                 )
             }
