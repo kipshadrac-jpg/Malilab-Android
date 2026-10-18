@@ -68,7 +68,7 @@ object Auth {
         if (token == null) return
         try {
             val user = call("GET", "/api/v1/account/me/", null, true).getJSONObject("user")
-            setEmail(user.optString("email"))
+            rememberEmail(user.optString("email"))
         } catch (e: ApiError) {
             if (e.status == 401) clear()
         }
@@ -83,7 +83,7 @@ object Auth {
         signedIn = true
     }
 
-    private fun setEmail(mail: String) {
+    private fun rememberEmail(mail: String) {
         if (mail.isNotBlank() && mail != email) {
             prefs.edit().putString("email", mail).apply()
             email = mail
