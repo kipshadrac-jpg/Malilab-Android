@@ -112,10 +112,7 @@ private fun MainScaffold(
             when (selected) {
                 0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
                 1 -> LearnScreen(active = active, onOpen = onOpenModule)
-                else -> {
-                    StatusBarIcons(darkIcons = true, active = active)
-                    ComingSoon(tabs[selected])
-                }
+                else -> MeScreen(active = active)
             }
         }
     }
