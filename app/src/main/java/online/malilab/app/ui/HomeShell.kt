@@ -49,22 +49,43 @@ private val tabs = listOf(
 @Composable
 fun HomeShell() {
     var selected by rememberSaveable { mutableIntStateOf(0) }
-    var openSlug by rememberSaveable { mutableStateOf<String?>(null) }
-    var openAccent by rememberSaveable { mutableIntStateOf(0) }
+    var openPlaybook by rememberSaveable { mutableStateOf<String?>(null) }
+    var openModule by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val slug = openSlug
-    if (slug != null) {
-        PlaybookDetailScreen(slug = slug, accentIndex = openAccent, onBack = { openSlug = null })
-    } else {
-        MainScaffold(selected = selected, onSelect = { selected = it }, onOpen = { s, i ->
-            openAccent = i
-            openSlug = s
-        })
+    val nothingOpen = openPlaybook == null && openModule == null
+
+    Box(Modifier.fillMaxSize()) {
+        MainScaffold(
+            selected = selected,
+            active = nothingOpen,
+            onSelect = { selected = it },
+            onOpenPlaybook = { openPlaybook = it },
+            onOpenModule = { openModule = it },
+        )
+        val pb = openPlaybook
+        if (pb != null) {
+            PlaybookDetailScreen(
+                slug = pb,
+                active = openModule == null,
+                onBack = { openPlaybook = null },
+                onOpenModule = { openModule = it },
+            )
+        }
+        val mod = openModule
+        if (mod != null) {
+            ModuleDetailScreen(slug = mod, active = true, onBack = { openModule = null })
+        }
     }
 }
 
 @Composable
-private fun MainScaffold(selected: Int, onSelect: (Int) -> Unit, onOpen: (String, Int) -> Unit) {
+private fun MainScaffold(
+    selected: Int,
+    active: Boolean,
+    onSelect: (Int) -> Unit,
+    onOpenPlaybook: (String) -> Unit,
+    onOpenModule: (String) -> Unit,
+) {
     Scaffold(
         containerColor = Mali.Cream,
         bottomBar = {
@@ -89,8 +110,12 @@ private fun MainScaffold(selected: Int, onSelect: (Int) -> Unit, onOpen: (String
     ) { inner ->
         Box(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             when (selected) {
-                0 -> PlaybooksScreen(onOpen = onOpen)
-                else -> ComingSoon(tabs[selected])
+                0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
+                1 -> LearnScreen(active = active, onOpen = onOpenModule)
+                else -> {
+                    StatusBarIcons(darkIcons = true, active = active)
+                    ComingSoon(tabs[selected])
+                }
             }
         }
     }

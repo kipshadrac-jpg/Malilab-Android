@@ -20,6 +20,7 @@ object Repo {
 
     private lateinit var prefs: SharedPreferences
     private var memList: List<PlaybookSummary>? = null
+    private var memModules: List<ModuleSummary>? = null
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("malilab_cache", Context.MODE_PRIVATE)
@@ -68,6 +69,49 @@ object Repo {
         }
     }
 
+    // ------------------------------------------------------------ modules (the "books")
+    fun peekModules(): List<ModuleSummary>? {
+        memModules?.let { return it }
+        val saved = prefs.getString("modules", null) ?: return null
+        val parsed = try {
+            parseModules(saved)
+        } catch (e: Exception) {
+            null
+        }
+        memModules = parsed
+        return parsed
+    }
+
+    suspend fun modules(): Loaded<List<ModuleSummary>> {
+        try {
+            val body = get("/api/v1/modules/")
+            val list = parseModules(body)
+            prefs.edit().putString("modules", body).apply()
+            memModules = list
+            return Loaded(list, false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val cached = peekModules() ?: throw e
+            return Loaded(cached, true)
+        }
+    }
+
+    suspend fun module(slug: String): Loaded<ModuleDetail> {
+        val key = "mod_$slug"
+        try {
+            val body = get("/api/v1/modules/$slug/")
+            val detail = parseModuleDetail(body)
+            prefs.edit().putString(key, body).apply()
+            return Loaded(detail, false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val saved = prefs.getString(key, null) ?: throw e
+            return Loaded(parseModuleDetail(saved), true)
+        }
+    }
+
     // ------------------------------------------------------------ notes (kept on the phone for now)
     fun notes(slug: String): String = prefs.getString("notes_$slug", "") ?: ""
 
@@ -90,6 +134,30 @@ object Repo {
     }
 
     // ------------------------------------------------------------ parsing
+    private fun parseModuleSummary(o: JSONObject) = ModuleSummary(
+        slug = o.getString("slug"),
+        title = o.optString("title"),
+        description = o.optString("description"),
+        lessonCount = o.optInt("lesson_count"),
+    )
+
+    private fun parseModules(body: String): List<ModuleSummary> {
+        val arr = JSONObject(body).optJSONArray("modules") ?: JSONArray()
+        return (0 until arr.length()).map { parseModuleSummary(arr.getJSONObject(it)) }
+    }
+
+    private fun parseModuleDetail(body: String): ModuleDetail {
+        val o = JSONObject(body)
+        val lessons = o.optJSONArray("lessons") ?: JSONArray()
+        return ModuleDetail(
+            summary = parseModuleSummary(o),
+            lessons = (0 until lessons.length()).map {
+                val l = lessons.getJSONObject(it)
+                LessonRef(l.optInt("n", it + 1), l.optString("slug"), l.optString("title"), l.optString("summary"))
+            },
+        )
+    }
+
     private fun parseList(body: String): List<PlaybookSummary> {
         val arr = JSONObject(body).optJSONArray("playbooks") ?: JSONArray()
         return (0 until arr.length()).map { parseSummary(arr.getJSONObject(it)) }

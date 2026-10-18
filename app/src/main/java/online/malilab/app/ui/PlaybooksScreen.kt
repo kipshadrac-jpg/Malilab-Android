@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,17 +12,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -46,13 +43,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import online.malilab.app.R
 import online.malilab.app.data.PlaybookSummary
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
@@ -64,11 +59,14 @@ private sealed interface ListState {
 }
 
 @Composable
-fun PlaybooksScreen(onOpen: (String, Int) -> Unit) {
+fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember {
         mutableStateOf<ListState>(Repo.peekList()?.let { ListState.Ready(it, false) } ?: ListState.Loading)
     }
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val progress = scrollProgress(listState, with(density) { 40.dp.toPx() }, with(density) { 110.dp.toPx() })
 
     LaunchedEffect(attempt) {
         if (state is ListState.Failed) state = ListState.Loading
@@ -82,12 +80,12 @@ fun PlaybooksScreen(onOpen: (String, Int) -> Unit) {
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item { PlaybooksHeader() }
+    // The header and the phone's status bar are the same teal, so white icons read well.
+    StatusBarIcons(darkIcons = false, active = active)
+
+    Box(Modifier.fillMaxSize().background(Color.White)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            item { ScreenHeader("Playbooks", "Pick a situation. Follow the steps.") }
             when (val s = state) {
                 is ListState.Loading -> items(3) { SkeletonCard() }
                 is ListState.Failed -> item {
@@ -104,7 +102,7 @@ fun PlaybooksScreen(onOpen: (String, Int) -> Unit) {
                             "Showing the copy saved on your phone.",
                             color = Mali.InkSoft,
                             fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 18.dp),
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
                         )
                     }
                     if (s.items.isEmpty()) item {
@@ -115,132 +113,67 @@ fun PlaybooksScreen(onOpen: (String, Int) -> Unit) {
                             onAction = { attempt++ },
                         )
                     }
-                    itemsIndexed(s.items, key = { _, p -> p.slug }) { index, p ->
-                        PlaybookCard(p, index) { onOpen(p.slug, index) }
+                    items(s.items, key = { it.slug }) { p ->
+                        PlaybookCard(p) { onOpen(p.slug) }
                     }
                 }
             }
-            item { Spacer(Modifier.height(16.dp)) }
         }
-        StatusBarScrim()
+        FadingBar(
+            progress = progress,
+            background = Mali.TealTop,
+            title = "Playbooks",
+            titleColor = Color.White,
+            onBack = null,
+        )
     }
 }
 
+/** Cover picture edge to edge, then the title and description in full, then a coloured "Learn more". */
 @Composable
-fun StatusBarScrim() {
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(top)
-            .background(Mali.TealTop)
-    )
-}
-
-@Composable
-private fun PlaybooksHeader() {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(Brush.verticalGradient(listOf(Mali.TealTop, Mali.TealBottom)))
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 22.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(
-                Modifier
-                    .size(58.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(48.dp))
-            }
-            Column {
-                Text("Playbooks", fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                Text("Pick a situation. Follow the steps.", fontSize = 14.sp, color = Mali.TealDeep)
-            }
-        }
-    }
-}
-
-@Composable
-fun PlaybookCard(p: PlaybookSummary, index: Int, onOpen: () -> Unit) {
-    val accent = Mali.accents[index % Mali.accents.size]
+fun PlaybookCard(p: PlaybookSummary, onOpen: () -> Unit) {
+    val accent = Mali.accentFor(p.slug)
     Column(
         Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .clickable(onClick = onOpen),
+            .clickable(onClick = onOpen)
+            .padding(bottom = 22.dp),
     ) {
-        Row(Modifier.fillMaxWidth().height(160.dp)) {
-            Box(
-                Modifier
-                    .size(160.dp)
-                    .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)),
-            ) {
-                CoverImage(p.coverUrl, p.coverAlt, accent, Modifier.fillMaxSize())
-                if (p.stepCount > 0) {
-                    Text(
-                        text = "${p.stepCount} steps",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(accent)
-                            .padding(horizontal = 9.dp, vertical = 4.dp),
-                    )
-                }
-            }
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp),
-            ) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f)) {
+            CoverImage(p.coverUrl, p.coverAlt, accent, Modifier.fillMaxSize())
+            if (p.stepCount > 0) {
                 Text(
-                    p.title,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 18.sp,
-                    lineHeight = 23.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Mali.Ink,
+                    text = "${p.stepCount} steps",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent)
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
                 )
-                if (p.goal.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("GOAL", fontSize = 11.sp, letterSpacing = 1.4.sp, fontWeight = FontWeight.ExtraBold, color = accent)
-                    Text(
-                        p.goal,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp,
-                        color = Mali.InkSoft,
-                    )
-                }
             }
         }
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+            Text(
+                p.title,
+                fontSize = 16.sp,
+                lineHeight = 21.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Mali.Ink,
+            )
             if (p.summary.isNotBlank()) {
-                Text(
-                    p.summary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 15.sp,
-                    lineHeight = 22.sp,
-                    color = Mali.Ink,
-                )
+                Spacer(Modifier.height(4.dp))
+                Text(p.summary, fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft)
             }
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("See more", color = accent, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Learn more", color = accent, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 Spacer(Modifier.size(6.dp))
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
             }
         }
-        Box(Modifier.fillMaxWidth().height(4.dp).background(accent.copy(alpha = 0.85f)))
     }
 }
 
@@ -267,7 +200,7 @@ fun CoverImage(url: String?, alt: String, accent: Color, modifier: Modifier) {
 }
 
 @Composable
-private fun SkeletonCard() {
+fun SkeletonCard() {
     val pulse = rememberInfiniteTransition(label = "skeleton")
     val a by pulse.animateFloat(
         initialValue = 0.35f,
@@ -275,18 +208,12 @@ private fun SkeletonCard() {
         animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
         label = "alpha",
     )
-    Column(Modifier.fillMaxWidth().background(Color.White).alpha(a)) {
-        Row(Modifier.height(160.dp)) {
-            Box(Modifier.size(160.dp).clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)).background(Mali.TealTint))
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.fillMaxWidth().height(18.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
-                Box(Modifier.fillMaxWidth(0.6f).height(18.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
-                Box(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
-            }
-        }
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
-            Box(Modifier.fillMaxWidth(0.7f).height(14.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
+    Column(Modifier.fillMaxWidth().background(Color.White).alpha(a).padding(bottom = 22.dp)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f).background(Mali.TealTint))
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.fillMaxWidth(0.8f).height(16.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
+            Box(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
+            Box(Modifier.fillMaxWidth(0.6f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
         }
     }
 }

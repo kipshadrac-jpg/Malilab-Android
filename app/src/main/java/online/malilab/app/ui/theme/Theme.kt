@@ -29,6 +29,9 @@ object Mali {
     val Green = Color(0xFF1F7A4D)
     val Night = Color(0xFF16202B)
     val accents = listOf(Teal, Indigo, Pink, Amber, Purple, Green)
+
+    /** The same item always gets the same accent colour, on every screen. */
+    fun accentFor(key: String): Color = accents[(key.hashCode() and Int.MAX_VALUE) % accents.size]
 }
 
 private val Scheme = lightColorScheme(

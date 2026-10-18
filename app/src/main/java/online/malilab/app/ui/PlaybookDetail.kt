@@ -27,10 +27,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
@@ -69,14 +71,20 @@ private sealed interface DetailState {
 }
 
 @Composable
-fun PlaybookDetailScreen(slug: String, accentIndex: Int, onBack: () -> Unit) {
+fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenModule: (String) -> Unit) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember { mutableStateOf<DetailState>(DetailState.Loading) }
     var notesOpen by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val progress = scrollProgress(listState, with(density) { 60.dp.toPx() }, with(density) { 150.dp.toPx() })
 
-    BackHandler(enabled = true) {
+    BackHandler(enabled = active) {
         if (notesOpen) notesOpen = false else onBack()
     }
+
+    // Light icons over the cover picture; dark ones once the cream bar has faded in (or while loading).
+    StatusBarIcons(darkIcons = state !is DetailState.Ready || progress > 0.5f, active = active)
 
     LaunchedEffect(slug, attempt) {
         state = DetailState.Loading
@@ -94,7 +102,7 @@ fun PlaybookDetailScreen(slug: String, accentIndex: Int, onBack: () -> Unit) {
                 Text("Opening the playbook…", color = Mali.InkSoft, fontSize = 16.sp)
             }
             is DetailState.Failed -> Column(Modifier.fillMaxSize().statusBarsPadding()) {
-                BackButton(onBack)
+                Box(Modifier.padding(12.dp)) { BackCircle(onBack) }
                 MessageBlock(
                     title = "Could not open this playbook",
                     body = "Check your connection and try again.",
@@ -103,7 +111,14 @@ fun PlaybookDetailScreen(slug: String, accentIndex: Int, onBack: () -> Unit) {
                 )
             }
             is DetailState.Ready -> {
-                DetailContent(s.detail, s.offline, accentIndex, onBack)
+                DetailContent(s.detail, s.offline, listState, onOpenModule)
+                FadingBar(
+                    progress = progress,
+                    background = Mali.Cream,
+                    title = s.detail.summary.title,
+                    titleColor = Mali.Ink,
+                    onBack = onBack,
+                )
                 PlanFab(
                     onClick = { notesOpen = true },
                     modifier = Modifier
@@ -113,36 +128,25 @@ fun PlaybookDetailScreen(slug: String, accentIndex: Int, onBack: () -> Unit) {
                 )
             }
         }
-        StatusBarScrim()
         if (notesOpen) NotesSheet(slug) { notesOpen = false }
     }
 }
 
 @Composable
-private fun BackButton(onBack: () -> Unit) {
-    Box(
-        Modifier
-            .padding(12.dp)
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.92f))
-            .clickable(onClick = onBack)
-            .semantics { contentDescription = "Back" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Mali.Ink)
-    }
-}
-
-@Composable
-private fun DetailContent(d: PlaybookDetail, offline: Boolean, accentIndex: Int, onBack: () -> Unit) {
+private fun DetailContent(d: PlaybookDetail, offline: Boolean, listState: LazyListState, onOpenModule: (String) -> Unit) {
     val s = d.summary
-    val accent = Mali.accents[accentIndex % Mali.accents.size]
-    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val accent = Mali.accentFor(s.slug)
+    LazyColumn(Modifier.fillMaxSize(), state = listState, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Box(Modifier.fillMaxWidth()) {
                 CoverImage(s.coverUrl, s.coverAlt, accent, Modifier.fillMaxWidth().aspectRatio(1200f / 630f))
-                Box(Modifier.statusBarsPadding()) { BackButton(onBack) }
+                // a soft shade so the clock and battery stay readable over any picture
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(90.dp)
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.35f), Color.Transparent))),
+                )
             }
         }
         item {
@@ -211,7 +215,13 @@ private fun DetailContent(d: PlaybookDetail, offline: Boolean, accentIndex: Int,
             items(d.modules.size) { i ->
                 val m = d.modules[i]
                 val c = Mali.accents[i % Mali.accents.size]
-                Row(Modifier.fillMaxWidth().background(Color.White).height(IntrinsicSize.Min)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .clickable { onOpenModule(m.slug) }
+                        .height(IntrinsicSize.Min),
+                ) {
                     Box(Modifier.width(8.dp).fillMaxHeight().background(c))
                     Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
                         Text(m.title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = c)

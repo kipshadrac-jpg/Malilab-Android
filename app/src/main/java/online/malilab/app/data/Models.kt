@@ -21,3 +21,9 @@ data class PlaybookDetail(
     val outcome: String,
     val modules: List<ModuleRef>,
 )
+
+data class ModuleSummary(val slug: String, val title: String, val description: String, val lessonCount: Int)
+
+data class LessonRef(val n: Int, val slug: String, val title: String, val summary: String)
+
+data class ModuleDetail(val summary: ModuleSummary, val lessons: List<LessonRef>)
