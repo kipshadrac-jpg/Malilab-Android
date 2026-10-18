@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -76,8 +75,7 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
     var state by remember { mutableStateOf<DetailState>(DetailState.Loading) }
     var notesOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val progress = scrollProgress(listState, with(density) { 60.dp.toPx() }, with(density) { 150.dp.toPx() })
+    val progress = firstItemProgress(listState, 0.6f, 0.95f)
 
     BackHandler(enabled = active) {
         if (notesOpen) notesOpen = false else onBack()
@@ -112,13 +110,8 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
             }
             is DetailState.Ready -> {
                 DetailContent(s.detail, s.offline, listState, onOpenModule)
-                FadingBar(
-                    progress = progress,
-                    background = Mali.Cream,
-                    title = s.detail.summary.title,
-                    titleColor = Mali.Ink,
-                    onBack = onBack,
-                )
+                StatusFade(Mali.Cream, progress)
+                BackFab(onBack)
                 PlanFab(
                     onClick = { notesOpen = true },
                     modifier = Modifier

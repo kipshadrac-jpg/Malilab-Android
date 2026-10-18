@@ -26,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,8 +46,7 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
         mutableStateOf<LearnState>(Repo.peekModules()?.let { LearnState.Ready(it, false) } ?: LearnState.Loading)
     }
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val progress = scrollProgress(listState, with(density) { 40.dp.toPx() }, with(density) { 110.dp.toPx() })
+    val progress = firstItemProgress(listState, 0.6f, 1f)
 
     LaunchedEffect(attempt) {
         if (state is LearnState.Failed) state = LearnState.Loading
@@ -60,7 +58,7 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
         }
     }
 
-    StatusBarIcons(darkIcons = false, active = active)
+    StatusBarIcons(darkIcons = progress > 0.5f, active = active)
 
     Box(Modifier.fillMaxSize().background(Color.White)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -99,7 +97,7 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
-        FadingBar(progress = progress, background = Mali.TealTop, title = "Learn", titleColor = Color.White, onBack = null)
+        StatusFade(Color.White, progress)
     }
 }
 

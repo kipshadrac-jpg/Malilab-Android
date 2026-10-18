@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
@@ -48,16 +51,38 @@ fun StatusBarIcons(darkIcons: Boolean, active: Boolean = true) {
     }
 }
 
-/** 0 at the top of the list, 1 once it has scrolled past [endPx]. Used to fade a top bar in. */
+/**
+ * How far the FIRST item of the list (the cover or header) has scrolled away, as 0..1 of its own height, mapped
+ * so that [from] gives 0 and [to] gives 1. Once the first item is gone it stays at 1.
+ */
 @Composable
-fun scrollProgress(state: LazyListState, startPx: Float, endPx: Float): Float {
-    val progress by remember(state, startPx, endPx) {
+fun firstItemProgress(state: LazyListState, from: Float, to: Float): Float {
+    val progress by remember(state, from, to) {
         derivedStateOf {
-            if (state.firstVisibleItemIndex > 0) 1f
-            else ((state.firstVisibleItemScrollOffset - startPx) / (endPx - startPx)).coerceIn(0f, 1f)
+            val first = state.layoutInfo.visibleItemsInfo.firstOrNull()
+            if (first == null || first.index > 0 || first.size <= 0) {
+                if (first != null && first.index > 0) 1f else 0f
+            } else {
+                ((-first.offset).toFloat() / first.size - from).div(to - from).coerceIn(0f, 1f)
+            }
         }
     }
     return progress
+}
+
+/**
+ * No header bar: the page simply scrolls up under the phone's status bar. This only softly fades the content
+ * into [color] right behind the clock and battery icons, so they stay readable.
+ */
+@Composable
+fun StatusFade(color: Color, progress: Float) {
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(top + 16.dp)
+            .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.92f * progress), color.copy(alpha = 0.92f * progress), Color.Transparent))),
+    )
 }
 
 @Composable
@@ -75,39 +100,8 @@ fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f) {
     }
 }
 
-/**
- * The bar over the top of a scrolling page. Transparent at first, so a cover picture can run all the way up
- * behind the status bar; it fills in and shows the title as the page scrolls.
- */
+/** The one fixed control on a detail page: a round back arrow in the top-left corner. */
 @Composable
-fun FadingBar(
-    progress: Float,
-    background: Color,
-    title: String,
-    titleColor: Color,
-    onBack: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier.fillMaxWidth().background(background.copy(alpha = progress))) {
-        Row(
-            Modifier
-                .statusBarsPadding()
-                .height(56.dp)
-                .padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (onBack != null) BackCircle(onBack, circleAlpha = 0.9f * (1f - progress))
-            Text(
-                title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = titleColor,
-                modifier = Modifier
-                    .padding(start = if (onBack != null) 12.dp else 10.dp)
-                    .alpha(progress),
-            )
-        }
-    }
+fun BackFab(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    Box(modifier.statusBarsPadding().padding(start = 12.dp, top = 8.dp)) { BackCircle(onBack) }
 }

@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,8 +53,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
     val accent = Mali.accentFor(slug)
     val context = LocalContext.current
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val progress = scrollProgress(listState, with(density) { 200.dp.toPx() }, with(density) { 300.dp.toPx() })
+    val progress = firstItemProgress(listState, 0.85f, 1f)
 
     BackHandler(enabled = active) { onBack() }
     StatusBarIcons(darkIcons = true, active = active)
@@ -176,7 +174,8 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit) {
                     }
                     item { Spacer(Modifier.height(32.dp)) }
                 }
-                FadingBar(progress = progress, background = Mali.Cream, title = m.title, titleColor = Mali.Ink, onBack = onBack)
+                StatusFade(Color.White, progress)
+                BackFab(onBack)
             }
         }
     }

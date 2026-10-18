@@ -43,7 +43,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,8 +64,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
         mutableStateOf<ListState>(Repo.peekList()?.let { ListState.Ready(it, false) } ?: ListState.Loading)
     }
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val progress = scrollProgress(listState, with(density) { 40.dp.toPx() }, with(density) { 110.dp.toPx() })
+    val progress = firstItemProgress(listState, 0.6f, 1f)
 
     LaunchedEffect(attempt) {
         if (state is ListState.Failed) state = ListState.Loading
@@ -81,7 +79,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
     }
 
     // The header and the phone's status bar are the same teal, so white icons read well.
-    StatusBarIcons(darkIcons = false, active = active)
+    StatusBarIcons(darkIcons = progress > 0.5f, active = active)
 
     Box(Modifier.fillMaxSize().background(Color.White)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -119,13 +117,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
                 }
             }
         }
-        FadingBar(
-            progress = progress,
-            background = Mali.TealTop,
-            title = "Playbooks",
-            titleColor = Color.White,
-            onBack = null,
-        )
+        StatusFade(Color.White, progress)
     }
 }
 
