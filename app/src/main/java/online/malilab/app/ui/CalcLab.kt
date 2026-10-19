@@ -72,11 +72,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** A saved calculation to reopen, taken from a block in a note. */
-class CalcSeed(val inputs: JSONObject, val solve: String?, val model: String = "compound")
+class CalcSeed(val inputs: JSONObject, val solve: String?, val model: String = "compound", val analysis: String? = null)
 
 /** Remembers the last calculation while the app is open, so reopening the Lab picks up where the person left off. */
 object LabMemory {
     var model: String = "compound"
+    var analysis: String = "sensitivity"
     val instruments = HashMap<String, JSONObject>()
     var inputs: JSONObject? = null
     var solve: String? = null
@@ -84,7 +85,7 @@ object LabMemory {
 
 private class InsertRequest(val title: String, val build: (String) -> List<Block>)
 
-private val TABS = listOf("Set up", "Summary", "Graph", "Table", "Compare")
+private val TABS = listOf("Set up", "Summary", "Graph", "Table", "Compare", "Analyze")
 
 /**
  * The calculator, full screen. The numbers always come from the website's tested calculation engine; this screen only
@@ -101,7 +102,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
             if (s != null) f.load(s.inputs, s.solve) else if (last != null) f.load(last, LabMemory.solve)
         }
     }
-    var tab by remember { mutableIntStateOf(if (seed != null) 1 else 0) }
+    var tab by remember { mutableIntStateOf(if (seed?.analysis != null) 5 else if (seed != null) 1 else 0) }
     var outcome by remember { mutableStateOf<CalcOutcome?>(null) }
     var loading by remember { mutableStateOf(false) }
     var errors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
@@ -183,7 +184,8 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
                 1 -> SummaryTab(outcome, errors, netError, loading, inputs, ::ask, calc, form)
                 2 -> GraphTab(outcome, inputs, calc, ::ask)
                 3 -> TableTab(outcome, inputs, solve, calc, ::ask)
-                else -> CompareTab(outcome, effective, ::ask, calc)
+                4 -> CompareTab(outcome, effective, ::ask, calc)
+                else -> AnalyzeTab(effective, outcome != null, seed?.analysis, ::ask)
             }
             toast?.let {
                 Text(

@@ -20,6 +20,9 @@ class InstrumentSpec(val model: String, val title: String, val blurb: String, va
 
 val INSTRUMENT_MODELS = listOf("tbill", "tbond", "mmf", "sacco", "loan")
 
+/** Analyses of a savings plan (what matters most, stress tests). They run on the same inputs as the savings calculator. */
+val ANALYSIS_MODELS = listOf("sensitivity", "stress")
+
 private val TAX_FIELDS = listOf(
     FieldSpec("tax_exempt", "I am exempt from this tax", "switch", hint = "For example, a registered pension fund with a KRA exemption certificate.", advanced = true),
     FieldSpec("tax_rate", "Use a different tax rate (%)", "number", hint = "Leave empty to use the rate from the source shown in Sources.", advanced = true),

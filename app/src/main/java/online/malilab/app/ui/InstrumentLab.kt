@@ -295,10 +295,10 @@ private fun InstrumentSetUp(form: InstrumentForm, errors: Map<String, String>, n
 }
 
 // ================================================================================================ results
-private fun strs(a: JSONArray?): List<String> = (0 until (a?.length() ?: 0)).map { a!!.optString(it) }
+internal fun strs(a: JSONArray?): List<String> = (0 until (a?.length() ?: 0)).map { a!!.optString(it) }
 
 @Composable
-private fun NothingYet(loading: Boolean, errors: Map<String, String>, netError: String?) {
+internal fun NothingYet(loading: Boolean, errors: Map<String, String>, netError: String?) {
     Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             if (loading) "Calculating…" else if (netError != null) "Could not calculate" else "Nothing to show yet",
@@ -313,7 +313,7 @@ private fun NothingYet(loading: Boolean, errors: Map<String, String>, netError: 
 }
 
 @Composable
-private fun InsertButton(text: String, onClick: () -> Unit) {
+internal fun InsertButton(text: String, onClick: () -> Unit) {
     Text(
         text, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(Mali.Indigo).clickable(onClick = onClick).padding(vertical = 14.dp),
@@ -384,14 +384,19 @@ private fun InstrumentResults(
 
 @Composable
 private fun InstrumentGraph(result: JSONObject?, request: (String, (String) -> List<Block>) -> Unit) {
-    if (result == null) { EmptyResults(); return }
-    val c = result.getJSONObject("chart")
+    if (result == null || result.optJSONObject("chart") == null) { EmptyResults(); return }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) { ChartSection(result, request) }
+}
+
+@Composable
+internal fun ChartSection(result: JSONObject, request: (String, (String) -> List<Block>) -> Unit) {
+    val c = result.optJSONObject("chart") ?: return
     val xs = strs(c.optJSONArray("x")).map { it.toDoubleOrNull() ?: 0.0 }
     val arr = c.optJSONArray("series") ?: JSONArray()
     val names = (0 until arr.length()).map { arr.getJSONObject(it).optString("name") }
     val values = (0 until arr.length()).map { i -> strs(arr.getJSONObject(i).optJSONArray("values")).map { it.toDoubleOrNull() ?: 0.0 } }
     val xName = c.optString("x_label", "Year").ifBlank { "Year" }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(c.optString("title"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(14.dp)) {
             LineChart(
@@ -401,7 +406,7 @@ private fun InstrumentGraph(result: JSONObject?, request: (String, (String) -> L
         }
         InsertButton("Insert this chart") { request("Chart: " + c.optString("title")) { m -> listOf(InstrumentEvidence.chart(result, m)) } }
         Text(
-            "The chart shows the same numbers as the Table tab. Lines differ by dash pattern and point shape as well as colour.",
+            "The chart shows the same numbers as the table. Lines differ by dash pattern and point shape as well as colour.",
             fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft,
         )
     }
@@ -409,25 +414,30 @@ private fun InstrumentGraph(result: JSONObject?, request: (String, (String) -> L
 
 @Composable
 private fun InstrumentTable(result: JSONObject?, request: (String, (String) -> List<Block>) -> Unit) {
-    if (result == null) { EmptyResults(); return }
-    val t = result.getJSONObject("table")
+    if (result == null || result.optJSONObject("table") == null) { EmptyResults(); return }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) { TableSection(result, request) }
+}
+
+@Composable
+internal fun TableSection(result: JSONObject, request: (String, (String) -> List<Block>) -> Unit) {
+    val t = result.optJSONObject("table") ?: return
     val cols = t.getJSONArray("columns")
     val rows = t.getJSONArray("rows")
     var all by remember(rows.length()) { mutableStateOf(false) }
     val limit = if (all) rows.length() else Math.min(rows.length(), 12)
-    val cellW = 112.dp
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    fun width(c: Int) = if (cols.optJSONObject(c)?.optString("key") in listOf("what", "factor", "scenario")) 176.dp else 112.dp
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(t.optString("title"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).horizontalScroll(rememberScrollState())) {
             Row(Modifier.background(Mali.TealTint).padding(vertical = 8.dp)) {
-                for (c in 0 until cols.length()) Text(cols.getJSONObject(c).optString("label"), Modifier.width(cellW).padding(horizontal = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
+                for (c in 0 until cols.length()) Text(cols.getJSONObject(c).optString("label"), Modifier.width(width(c)).padding(horizontal = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
             }
             for (r in 0 until limit) {
                 val row = rows.getJSONArray(r)
                 Row(Modifier.background(if (r % 2 == 0) Color.White else Mali.Cream).padding(vertical = 7.dp)) {
                     for (c in 0 until row.length()) {
                         val kind = cols.optJSONObject(c)?.optString("kind")
-                        Text(if (kind == "money") Fmt.money(row.optString(c)) else row.optString(c), Modifier.width(cellW).padding(horizontal = 6.dp), fontSize = 13.sp, color = Mali.Ink)
+                        Text(if (kind == "money") Fmt.money(row.optString(c)) else row.optString(c), Modifier.width(width(c)).padding(horizontal = 6.dp), fontSize = 13.sp, color = Mali.Ink)
                     }
                 }
             }

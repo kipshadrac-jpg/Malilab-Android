@@ -453,7 +453,7 @@ object Evidence {
         val raw = b.raw ?: return b
         val calc = raw.optJSONObject("calc") ?: return b
         val inputs = calc.optJSONObject("inputs") ?: return b
-        if (calc.optString("model") in INSTRUMENT_MODELS) return InstrumentEvidence.refresh(b)
+        if (calc.optString("model") in INSTRUMENT_MODELS || calc.optString("model") in ANALYSIS_MODELS) return InstrumentEvidence.refresh(b)
         val view = raw.optJSONObject("view")
         val newCalcBase = { res: JSONObject, solve: String?, sc: List<Pair<String, JSONObject>>? -> calcInfo(res, inputs, solve, sc) }
         if (raw.optString("type") == "scenarios" || view?.optString("kind") == "compare") {

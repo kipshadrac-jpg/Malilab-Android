@@ -238,15 +238,15 @@ private fun TableBlock(raw: JSONObject) {
     val rows = raw.optJSONArray("rows") ?: JSONArray()
     var all by remember { mutableStateOf(false) }
     val limit = if (all) rows.length() else Math.min(rows.length(), 10)
-    val cellW = 104.dp
+    fun cellW(c: Int) = if (cols.optJSONObject(c)?.optString("key") in listOf("what", "factor", "scenario")) 168.dp else 104.dp
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row(Modifier.background(Mali.TealTint).padding(vertical = 6.dp)) {
-            for (c in 0 until cols.length()) Text(cols.getJSONObject(c).optString("label"), Modifier.width(cellW).padding(horizontal = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
+            for (c in 0 until cols.length()) Text(cols.getJSONObject(c).optString("label"), Modifier.width(cellW(c)).padding(horizontal = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
         }
         for (r in 0 until limit) {
             val row = rows.getJSONArray(r)
             Row(Modifier.background(if (r % 2 == 0) Color.White else Mali.Cream).padding(vertical = 5.dp)) {
-                for (c in 0 until row.length()) Text(row.optString(c), Modifier.width(cellW).padding(horizontal = 4.dp), fontSize = 12.sp, color = Mali.Ink)
+                for (c in 0 until row.length()) Text(row.optString(c), Modifier.width(cellW(c)).padding(horizontal = 4.dp), fontSize = 12.sp, color = Mali.Ink)
             }
         }
     }
