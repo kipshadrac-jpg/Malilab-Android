@@ -61,6 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import online.malilab.app.data.ApiError
 import online.malilab.app.data.Block
+import online.malilab.app.data.INSTRUMENT_MODELS
 import online.malilab.app.data.Evidence
 import online.malilab.app.data.Note
 import online.malilab.app.data.NoteStore
@@ -223,7 +224,10 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     fun openCalculator(block: Block?) {
         val calc = block?.raw?.optJSONObject("calc")
         val inputs = calc?.optJSONObject("inputs")
-        labSeed = if (inputs != null) CalcSeed(inputs, calc.optString("solve").ifBlank { null }) else null
+        labSeed = if (inputs != null) {
+            val model = calc.optString("model")
+            CalcSeed(inputs, calc.optString("solve").ifBlank { null }, if (model in INSTRUMENT_MODELS) model else "compound")
+        } else null
         labOpen = true
     }
 
@@ -441,7 +445,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
         }
     }
     if (labOpen) {
-        CalculatorLab(
+        CalculatorHub(
             seed = labSeed,
             onInsert = { insertBlocks(it) },
             onClose = { labOpen = false },

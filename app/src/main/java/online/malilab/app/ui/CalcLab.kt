@@ -72,10 +72,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** A saved calculation to reopen, taken from a block in a note. */
-class CalcSeed(val inputs: JSONObject, val solve: String?)
+class CalcSeed(val inputs: JSONObject, val solve: String?, val model: String = "compound")
 
 /** Remembers the last calculation while the app is open, so reopening the Lab picks up where the person left off. */
 object LabMemory {
+    var model: String = "compound"
+    val instruments = HashMap<String, JSONObject>()
     var inputs: JSONObject? = null
     var solve: String? = null
 }
@@ -90,7 +92,7 @@ private val TABS = listOf("Set up", "Summary", "Graph", "Table", "Compare")
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit) {
+fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit = {}) {
     val context = LocalContext.current
     val form = remember {
         CalcForm().also { f ->
@@ -167,6 +169,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
                 modifier = Modifier.clip(RoundedCornerShape(50)).clickable { form.reset(); outcome = null; errors = emptyMap() }.padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
+        header()
         Row(
             Modifier.fillMaxWidth().background(Color.White).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -233,7 +236,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
 }
 
 @Composable
-private fun ModeRow(title: String, blurb: String, selected: Boolean, onClick: () -> Unit) {
+internal fun ModeRow(title: String, blurb: String, selected: Boolean, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -251,7 +254,7 @@ private fun ModeRow(title: String, blurb: String, selected: Boolean, onClick: ()
 
 // ================================================================================================ small building blocks
 @Composable
-private fun fieldColors() = OutlinedTextFieldDefaults.colors(
+internal fun fieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = Mali.Teal, unfocusedBorderColor = Mali.Sand, cursorColor = Mali.Teal,
     focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, errorContainerColor = Color.White,
     errorBorderColor = Mali.Pink,
@@ -289,7 +292,7 @@ private fun NumField(
 }
 
 @Composable
-private fun Section(title: String, note: String = "", content: @Composable () -> Unit) {
+internal fun Section(title: String, note: String = "", content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -315,7 +318,7 @@ private fun Choice(form: CalcForm, key: String, label: String, options: List<Pai
 }
 
 @Composable
-private fun SwitchRow(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Mali.Ink)
         Switch(on, onChange, colors = SwitchDefaults.colors(checkedTrackColor = Mali.Teal))
@@ -618,11 +621,12 @@ private fun SummaryTab(
 private fun kindWords(kind: String) = when (kind) {
     "user-entered" -> "you entered"
     "assumption" -> "an assumption"
+    "sourced" -> "from a source"
     else -> kind
 }
 
 @Composable
-private fun MetricCard(label: String, value: String, modifier: Modifier, onInsert: () -> Unit) {
+internal fun MetricCard(label: String, value: String, modifier: Modifier, onInsert: () -> Unit) {
     Column(modifier.clip(RoundedCornerShape(16.dp)).background(Color.White).padding(14.dp)) {
         Text(label, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
         Spacer(Modifier.height(4.dp))
@@ -633,12 +637,12 @@ private fun MetricCard(label: String, value: String, modifier: Modifier, onInser
 }
 
 @Composable
-private fun InfoLine(text: String, color: Color) {
+internal fun InfoLine(text: String, color: Color) {
     Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.10f)).padding(14.dp))
 }
 
 @Composable
-private fun Card(title: String, note: String, content: @Composable () -> Unit) {
+internal fun Card(title: String, note: String, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title.uppercase(), fontSize = 12.sp, letterSpacing = 1.3.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Teal)
         if (note.isNotBlank()) Text(note, fontSize = 13.sp, lineHeight = 18.sp, color = Mali.InkSoft)
@@ -692,7 +696,7 @@ private fun GraphTab(outcome: CalcOutcome?, inputs: JSONObject, calc: JSONObject
 }
 
 @Composable
-private fun EmptyResults() {
+internal fun EmptyResults() {
     Column(Modifier.fillMaxSize().padding(28.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text("No results yet", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
         Spacer(Modifier.height(6.dp))

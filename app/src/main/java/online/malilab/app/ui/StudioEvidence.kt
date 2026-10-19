@@ -109,7 +109,11 @@ fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, on
                 val arr = raw.optJSONArray("series") ?: JSONArray()
                 val names = (0 until arr.length()).map { arr.getJSONObject(it).optString("name") }
                 val values = (0 until arr.length()).map { i -> strings(arr.getJSONObject(i).optJSONArray("values")).map { it.toDoubleOrNull() ?: 0.0 } }
-                LineChart(xs, chartSeries(names, values), height = 190.dp)
+                val xName = raw.optString("x_label", "Year").ifBlank { "Year" }
+                LineChart(
+                    xs, chartSeries(names, values), height = 190.dp, xTitle = xName,
+                    readoutLabel = { x -> xName + " " + (if (x % 1.0 == 0.0) x.toInt().toString() else String.format(java.util.Locale.US, "%.1f", x)) },
+                )
             }
             "table" -> TableBlock(raw)
             "scenarios" -> {
@@ -141,8 +145,9 @@ fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, on
                     val a = arr.getJSONObject(i)
                     Column(Modifier.padding(vertical = 3.dp)) {
                         Text(a.optString("label"), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
-                        val kind = when (a.optString("kind")) { "user-entered" -> "you entered"; "assumption" -> "an assumption"; else -> a.optString("kind") }
+                        val kind = when (a.optString("kind")) { "user-entered" -> "you entered"; "assumption" -> "an assumption"; "sourced" -> "from a source"; else -> a.optString("kind") }
                         Text(a.optString("value") + "  ·  " + kind, fontSize = 14.sp, color = Mali.Ink)
+                        if (a.optString("source").isNotBlank()) Text(a.optString("source"), fontSize = 11.sp, lineHeight = 15.sp, color = Mali.InkSoft)
                     }
                 }
             }
