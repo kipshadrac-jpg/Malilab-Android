@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 /** A problem the person can read: the website's own message, or a connection message. */
-class ApiError(val code: String, message: String, val status: Int) : Exception(message)
+class ApiError(val code: String, message: String, val status: Int, val body: JSONObject = JSONObject()) : Exception(message)
 
 /**
  * The app's own sign-in. The website hands the app a private token after sign-in; the app keeps it on the phone and
@@ -95,6 +95,29 @@ object Auth {
         return updated
     }
 
+    /** An authenticated call for other parts of the app (notes, calculator). */
+    suspend fun api(method: String, path: String, body: JSONObject? = null): JSONObject = call(method, path, body, true)
+
+    /** An authenticated GET that returns plain text (an exported note). */
+    suspend fun apiText(path: String): String = withContext(Dispatchers.IO) {
+        val conn = URL(Repo.BASE + path).openConnection() as HttpURLConnection
+        try {
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 30_000
+            token?.let { conn.setRequestProperty("Authorization", "Bearer $it") }
+            val status = conn.responseCode
+            if (status !in 200..299) throw ApiError("http_$status", "Could not export this note.", status)
+            conn.inputStream.bufferedReader().use { it.readText() }
+        } catch (e: IOException) {
+            throw ApiError("network", "Could not reach MaliLab. Check your connection and try again.", 0)
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    /** The signed-in account, so notes on a shared phone never mix. */
+    val accountKey: String get() = email.lowercase().replace(Regex("[^a-z0-9]"), "_")
+
     private fun parseProgress(o: JSONObject): Progress {
         val lessons = o.optJSONArray("lessons")
         val modules = o.optJSONArray("modules")
@@ -158,6 +181,7 @@ object Auth {
                         json.optString("error", "http_$status"),
                         json.optString("message", "Something went wrong. Please try again."),
                         status,
+                        json,
                     )
                 }
                 json

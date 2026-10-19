@@ -63,6 +63,7 @@ fun LessonScreen(
     active: Boolean,
     onBack: () -> Unit,
     onOpenLesson: (String) -> Unit,
+    onPlan: (String) -> Unit,
 ) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(lessonSlug) { mutableStateOf<LessonState>(LessonState.Loading) }
@@ -70,13 +71,11 @@ fun LessonScreen(
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var celebrate by remember(lessonSlug) { mutableStateOf(false) }
-    var notesOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val accent = Mali.accentFor(moduleSlug)
 
     BackHandler(enabled = active) {
         when {
-            notesOpen -> notesOpen = false
             celebrate -> celebrate = false
             else -> onBack()
         }
@@ -180,18 +179,17 @@ fun LessonScreen(
                 }
                 BackFab(onBack)
                 PlanFab(
-                    onClick = { notesOpen = true },
+                    onClick = { onPlan(s.lesson.title) },
                     modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(18.dp),
                 )
             }
         }
-        if (notesOpen) NotesSheet("lesson-$lessonSlug") { notesOpen = false }
         if (celebrate) {
             Congratulations(
                 moduleTitle = module?.summary?.title.orEmpty(),
                 lessonCount = lessons.size,
                 accent = accent,
-                onPlan = { celebrate = false; notesOpen = true },
+                onPlan = { celebrate = false; onPlan((state as? LessonState.Ready)?.lesson?.title.orEmpty()) },
                 onBackToModule = onBack,
             )
         }

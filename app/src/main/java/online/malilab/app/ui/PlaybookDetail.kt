@@ -70,15 +70,14 @@ private sealed interface DetailState {
 }
 
 @Composable
-fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenModule: (String) -> Unit) {
+fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenModule: (String) -> Unit, onPlan: (String) -> Unit) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember { mutableStateOf<DetailState>(DetailState.Loading) }
-    var notesOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val progress = firstItemProgress(listState, 0.6f, 0.95f)
 
     BackHandler(enabled = active) {
-        if (notesOpen) notesOpen = false else onBack()
+        onBack()
     }
 
     // Light icons over the cover picture; dark ones once the cream bar has faded in (or while loading).
@@ -112,7 +111,7 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
                 DetailContent(s.detail, s.offline, listState, onOpenModule)
                 BackFab(onBack)
                 PlanFab(
-                    onClick = { notesOpen = true },
+                    onClick = { onPlan(s.detail.summary.title) },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .navigationBarsPadding()
@@ -120,7 +119,6 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
                 )
             }
         }
-        if (notesOpen) NotesSheet(slug) { notesOpen = false }
     }
 }
 

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import online.malilab.app.data.Auth
+import online.malilab.app.data.NoteStore
 import online.malilab.app.ui.theme.Mali
 
 @Composable
@@ -48,7 +49,7 @@ fun MeScreen(active: Boolean) {
             )
             InfoCard(
                 "MY PLAN",
-                "Your notes and plan will be saved to your account soon, so they follow you to every phone.",
+                "Your notes are saved to your account, so they follow you to every phone. Find them in the Plan tab.",
                 Mali.Amber,
             )
             Spacer(Modifier.height(6.dp))
@@ -66,6 +67,7 @@ fun MeScreen(active: Boolean) {
                         scope.launch {
                             busy = true
                             Auth.signOut()
+                            NoteStore.reset()
                             busy = false
                         }
                     }

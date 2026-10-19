@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +38,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import online.malilab.app.data.ApiError
+import online.malilab.app.data.NoteStore
+import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
 
 private data class Tab(val title: String, val icon: ImageVector)
@@ -43,6 +49,7 @@ private data class Tab(val title: String, val icon: ImageVector)
 private val tabs = listOf(
     Tab("Home", Icons.Filled.Home),
     Tab("Learn", Icons.Filled.Info),
+    Tab("Plan", Icons.Filled.Edit),
     Tab("Me", Icons.Filled.Person),
 )
 
@@ -53,8 +60,21 @@ fun HomeShell() {
     var openModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonSlug by rememberSaveable { mutableStateOf<String?>(null) }
+    var studioUid by rememberSaveable { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
-    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null
+    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null
+
+    // The pen button on a playbook or lesson opens the person's own note for it in the Studio.
+    fun openContextNote(kind: String, slug: String, title: String, legacyKey: String) {
+        scope.launch {
+            try {
+                studioUid = NoteStore.forContext(kind, slug, title, Repo.notes(legacyKey))
+            } catch (e: ApiError) {
+                // Could not start a note right now; the pen button can be tapped again.
+            }
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         MainScaffold(
@@ -63,21 +83,23 @@ fun HomeShell() {
             onSelect = { selected = it },
             onOpenPlaybook = { openPlaybook = it },
             onOpenModule = { openModule = it },
+            onOpenNote = { studioUid = it },
         )
         val pb = openPlaybook
         if (pb != null) {
             PlaybookDetailScreen(
                 slug = pb,
-                active = openModule == null,
+                active = openModule == null && studioUid == null,
                 onBack = { openPlaybook = null },
                 onOpenModule = { openModule = it },
+                onPlan = { title -> openContextNote("playbook", pb, title, pb) },
             )
         }
         val mod = openModule
         if (mod != null) {
             ModuleDetailScreen(
                 slug = mod,
-                active = lessonSlug == null,
+                active = lessonSlug == null && studioUid == null,
                 onBack = { openModule = null },
                 onOpenLesson = { lessonModule = mod; lessonSlug = it },
             )
@@ -88,10 +110,21 @@ fun HomeShell() {
             LessonScreen(
                 moduleSlug = lm,
                 lessonSlug = ls,
-                active = true,
+                active = studioUid == null,
                 onBack = { lessonSlug = null; lessonModule = null },
                 onOpenLesson = { lessonSlug = it },
+                onPlan = { title -> openContextNote("lesson", ls, title, "lesson-$ls") },
             )
+        }
+        val studio = studioUid
+        if (studio != null) {
+            androidx.compose.runtime.key(studio) {
+                StudioScreen(
+                    uid = studio,
+                    onClose = { studioUid = null },
+                    onSwitch = { studioUid = it },
+                )
+            }
         }
     }
 }
@@ -103,6 +136,7 @@ private fun MainScaffold(
     onSelect: (Int) -> Unit,
     onOpenPlaybook: (String) -> Unit,
     onOpenModule: (String) -> Unit,
+    onOpenNote: (String) -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -130,6 +164,7 @@ private fun MainScaffold(
             when (selected) {
                 0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
                 1 -> LearnScreen(active = active, onOpen = onOpenModule)
+                2 -> PlanScreen(active = active, onOpen = onOpenNote)
                 else -> MeScreen(active = active)
             }
         }
