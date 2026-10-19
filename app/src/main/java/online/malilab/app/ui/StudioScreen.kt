@@ -61,6 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import online.malilab.app.data.ApiError
 import online.malilab.app.data.Block
+import online.malilab.app.data.Evidence
 import online.malilab.app.data.Note
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PushResult
@@ -103,6 +104,8 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     var showMeta by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    var labOpen by remember(uid) { mutableStateOf(false) }
+    var labSeed by remember(uid) { mutableStateOf<CalcSeed?>(null) }
     var conflictCopy by remember(uid) { mutableStateOf<String?>(null) }
     var message by remember(uid) { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
@@ -188,6 +191,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
             "quote" -> Block(type = "quote")
             "callout" -> Block(type = "callout", tone = "tip")
             "divider" -> Block(type = "divider")
+            "source" -> Evidence.source()
             else -> Block()
         }
         val idx = d.blocks.indexOfFirst { it.id == focusedId }
@@ -201,6 +205,26 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
         setBlocks(list, true)
         focusedId = fresh.id
         pendingFocus = if (type == "divider") null else fresh.id
+    }
+
+    /** Puts calculator results into the note after the block being edited, or at the end, and leaves room to keep writing. */
+    fun insertBlocks(blocks: List<Block>) {
+        val d = doc ?: return
+        if (blocks.isEmpty()) return
+        val idx = d.blocks.indexOfFirst { it.id == focusedId }
+        val list = d.blocks.toMutableList()
+        val at = if (idx >= 0) idx + 1 else list.size
+        list.addAll(at, blocks)
+        if (at + blocks.size >= list.size) list.add(Block())
+        setBlocks(list, true)
+        focusedId = blocks.last().id
+    }
+
+    fun openCalculator(block: Block?) {
+        val calc = block?.raw?.optJSONObject("calc")
+        val inputs = calc?.optJSONObject("inputs")
+        labSeed = if (inputs != null) CalcSeed(inputs, calc.optString("solve").ifBlank { null }) else null
+        labOpen = true
     }
 
     fun move(id: String, delta: Int) {
@@ -270,6 +294,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     BackHandler(enabled = true) { close() }
 
     // ---- screen ---------------------------------------------------------------------------------------------
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(Mali.Cream).imePadding()) {
         Row(
             Modifier
@@ -402,16 +427,26 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                             onMoveDown = if (i < d.blocks.lastIndex) ({ move(b.id, 1) }) else null,
                             onDuplicate = { duplicate(b.id) },
                             onDelete = { remove(b.id) },
-                            evidence = { EvidenceFallback(it) },
+                            evidence = { blk, isFocused, replace ->
+                                EvidenceBlock(blk, isFocused, replace, onOpenCalc = { openCalculator(it) })
+                            },
                         )
                     }
                     item(key = "end") {
                         Box(Modifier.fillMaxWidth().height(220.dp).clickable { tapEnd() })
                     }
                 }
-                StudioToolbar(onAdd = { addBlock(it) })
+                StudioToolbar(onAdd = { if (it == "calc") openCalculator(null) else addBlock(it) })
             }
         }
+    }
+    if (labOpen) {
+        CalculatorLab(
+            seed = labSeed,
+            onInsert = { insertBlocks(it) },
+            onClose = { labOpen = false },
+        )
+    }
     }
 
     // ---- dialogs --------------------------------------------------------------------------------------------
@@ -527,11 +562,13 @@ private fun StudioToolbar(onAdd: (String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            ActionChip("Calculator", color = Mali.Teal, selected = true) { onAdd("calc") }
             ActionChip("Text") { onAdd("paragraph") }
             ActionChip("Heading") { onAdd("heading") }
             ActionChip("List") { onAdd("list") }
             ActionChip("Callout", color = Mali.Indigo) { onAdd("callout") }
             ActionChip("Quote", color = Mali.Purple) { onAdd("quote") }
+            ActionChip("Source", color = Mali.Amber) { onAdd("source") }
             ActionChip("Line", color = Mali.InkSoft) { onAdd("divider") }
         }
     }

@@ -152,7 +152,7 @@ fun NoteBlockView(
     onMoveDown: (() -> Unit)?,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
-    evidence: @Composable (Block) -> Unit,
+    evidence: @Composable (Block, Boolean, (Block) -> Unit) -> Unit,
 ) {
     val body = TextStyle(fontSize = 17.sp, lineHeight = 27.sp, color = Mali.Ink)
     Column(
@@ -213,7 +213,7 @@ fun NoteBlockView(
                     .background(Mali.Sand)
                     .clickable(onClick = onFocus),
             )
-            else -> Box(Modifier.clickable(onClick = onFocus)) { evidence(block) }
+            else -> Box(Modifier.clickable(onClick = onFocus)) { evidence(block, focused) { nb -> onRestyle(nb) } }
         }
         if (focused) {
             BlockActions(block, onRestyle, onMoveUp, onMoveDown, onDuplicate, onDelete)
