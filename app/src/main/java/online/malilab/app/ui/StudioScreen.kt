@@ -58,7 +58,9 @@ import androidx.compose.ui.unit.sp
 import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import online.malilab.app.data.ApiError
 import online.malilab.app.data.Block
 import online.malilab.app.data.ANALYSIS_MODELS
@@ -376,6 +378,20 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                                 context.startActivity(Intent.createChooser(send, "Share note"))
                             } catch (e: ApiError) {
                                 message = if (e.status == 0) "Connect to the internet to export this note." else e.message
+                            }
+                        }
+                    }
+                    MenuRow("Save as PDF") {
+                        menuOpen = false
+                        memory.job?.cancel()
+                        flushLocal()
+                        val d = doc
+                        if (d != null) scope.launch {
+                            try {
+                                val file = withContext(Dispatchers.Default) { NotePdf.build(context, d) }
+                                NotePdf.share(context, file, d.title)
+                            } catch (e: Exception) {
+                                message = "Could not make the PDF: " + (e.message ?: "unknown problem")
                             }
                         }
                     }
