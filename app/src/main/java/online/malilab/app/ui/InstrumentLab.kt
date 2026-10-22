@@ -55,14 +55,17 @@ import online.malilab.app.data.Fmt
 import online.malilab.app.data.INSTRUMENTS
 import online.malilab.app.data.InstrumentApi
 import online.malilab.app.data.InstrumentEvidence
+import online.malilab.app.data.COMPARE_SPEC
+import online.malilab.app.data.CompareForm
 import online.malilab.app.data.InstrumentForm
+import online.malilab.app.data.LabForm
 import online.malilab.app.data.INSTRUMENT_MODELS
 import online.malilab.app.data.instrumentSpec
 import online.malilab.app.ui.theme.Mali
 import org.json.JSONArray
 import org.json.JSONObject
 
-private val PICKER = listOf("compound" to "Savings & growth") + INSTRUMENTS.map { it.model to it.title }
+private val PICKER = listOf("compound" to "Savings & growth") + INSTRUMENTS.map { it.model to it.title } + listOf(COMPARE_SPEC.model to COMPARE_SPEC.title)
 private val INSTRUMENT_TABS = listOf("Set up", "Results", "Graph", "Table", "Sources")
 
 /** The calculator, with a row at the top to choose what is being calculated: savings, or one of the Kenyan instruments. */
@@ -92,11 +95,11 @@ private class InstrumentInsert(val title: String, val build: (String) -> List<Bl
 @Composable
 fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit) {
     val spec = instrumentSpec(model)
-    val form = remember(model) {
-        InstrumentForm(spec).also { f ->
-            val start = seedInputs ?: LabMemory.instruments[model]
-            if (start != null) f.load(start)
-        }
+    val form: LabForm = remember(model) {
+        val f: LabForm = if (model == "compare") CompareForm() else InstrumentForm(spec)
+        val start = seedInputs ?: LabMemory.instruments[model]
+        if (start != null) f.load(start)
+        f
     }
     var tab by remember { mutableIntStateOf(if (seedInputs != null) 1 else 0) }
     var result by remember { mutableStateOf<JSONObject?>(null) }
@@ -164,7 +167,11 @@ fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (tab) {
-                0 -> InstrumentSetUp(form, errors, netError)
+                0 -> when (form) {
+                    is CompareForm -> CompareSetUp(form, errors, netError)
+                    is InstrumentForm -> InstrumentSetUp(form, errors, netError)
+                    else -> Unit
+                }
                 1 -> InstrumentResults(result, errors, netError, loading, ::request)
                 2 -> InstrumentGraph(result, ::request)
                 3 -> InstrumentTable(result, ::request)

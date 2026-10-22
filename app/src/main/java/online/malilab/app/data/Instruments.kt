@@ -1,6 +1,10 @@
 package online.malilab.app.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,7 +22,7 @@ class FieldSpec(
 
 class InstrumentSpec(val model: String, val title: String, val blurb: String, val fields: List<FieldSpec>)
 
-val INSTRUMENT_MODELS = listOf("tbill", "tbond", "mmf", "sacco", "loan")
+val INSTRUMENT_MODELS = listOf("tbill", "tbond", "mmf", "sacco", "loan", "compare")
 
 /** Analyses of a savings plan (what matters most, stress tests). They run on the same inputs as the savings calculator. */
 val ANALYSIS_MODELS = listOf("sensitivity", "stress")
@@ -83,16 +87,28 @@ val INSTRUMENTS: List<InstrumentSpec> = listOf(
     ),
 )
 
-fun instrumentSpec(model: String): InstrumentSpec = INSTRUMENTS.first { it.model == model }
+fun instrumentSpec(model: String): InstrumentSpec =
+    if (model == "compare") COMPARE_SPEC else INSTRUMENTS.first { it.model == model }
+
+val COMPARE_SPEC = InstrumentSpec(
+    "compare", "Compare options", "Put the same money in different places for the same time and see the numbers side by side.", emptyList(),
+)
+
+/** What every calculator form can do, so one screen can host any of them. */
+interface LabForm {
+    fun toInputs(): JSONObject
+    fun load(inputs: JSONObject)
+    fun reset()
+}
 
 /** Everything typed into an instrument form, kept as text so half-typed numbers are never rejected on the phone. */
-class InstrumentForm(val spec: InstrumentSpec) {
+class InstrumentForm(val spec: InstrumentSpec) : LabForm {
     val text = mutableStateMapOf<String, String>()
     val flags = mutableStateMapOf<String, Boolean>()
 
     init { reset() }
 
-    fun reset() {
+    override fun reset() {
         text.clear(); flags.clear()
         for (f in spec.fields) {
             if (f.kind == "switch") flags[f.key] = f.default == "true"
@@ -100,7 +116,7 @@ class InstrumentForm(val spec: InstrumentSpec) {
         }
     }
 
-    fun toInputs(): JSONObject {
+    override fun toInputs(): JSONObject {
         val o = JSONObject()
         for (f in spec.fields) {
             if (f.kind == "switch") {
@@ -113,11 +129,74 @@ class InstrumentForm(val spec: InstrumentSpec) {
         return o
     }
 
-    fun load(inputs: JSONObject) {
+    override fun load(inputs: JSONObject) {
         reset()
         for (f in spec.fields) {
             if (!inputs.has(f.key) || inputs.isNull(f.key)) continue
             if (f.kind == "switch") flags[f.key] = inputs.optBoolean(f.key, false) else text[f.key] = inputs.optString(f.key)
+        }
+    }
+}
+
+// ============================================================================================ comparing options
+val COMPARE_KINDS = listOf("tbill" to "Treasury bill", "mmf" to "Money market fund", "sacco" to "SACCO", "bank" to "Bank account")
+
+/** One place to put the money, in the comparison. */
+class CompareOption(kind: String = "tbill", yieldPct: String = "", tenor: String = "364", basis: String = "gross") {
+    var kind by mutableStateOf(kind)
+    var yieldPct by mutableStateOf(yieldPct)
+    var tenor by mutableStateOf(tenor)
+    var basis by mutableStateOf(basis)
+}
+
+class CompareForm : LabForm {
+    val text = mutableStateMapOf<String, String>()
+    var taxExempt by mutableStateOf(false)
+    val options = mutableStateListOf<CompareOption>()
+
+    init { reset() }
+
+    override fun reset() {
+        text.clear()
+        text["amount"] = "100000"
+        text["years"] = "5"
+        taxExempt = false
+        options.clear()
+        options.add(CompareOption("tbill"))
+        options.add(CompareOption("mmf"))
+    }
+
+    override fun toInputs(): JSONObject {
+        val o = JSONObject()
+        for (k in listOf("amount", "years")) {
+            val v = text[k].orEmpty().replace(",", "").replace(" ", "").trim()
+            if (v.isNotEmpty()) o.put(k, v)
+        }
+        if (taxExempt) o.put("tax_exempt", true)
+        val arr = JSONArray()
+        for (opt in options) {
+            val e = JSONObject().put("kind", opt.kind)
+            val y = opt.yieldPct.replace(",", "").trim()
+            if (y.isNotEmpty()) e.put("yield_pct", y)
+            if (opt.kind == "tbill") e.put("tenor_days", opt.tenor.toIntOrNull() ?: 364)
+            if (opt.kind == "mmf" || opt.kind == "bank") e.put("yield_basis", opt.basis)
+            arr.put(e)
+        }
+        o.put("options", arr)
+        return o
+    }
+
+    override fun load(inputs: JSONObject) {
+        reset()
+        for (k in listOf("amount", "years")) if (inputs.has(k) && !inputs.isNull(k)) text[k] = inputs.optString(k)
+        taxExempt = inputs.optBoolean("tax_exempt", false)
+        val arr = inputs.optJSONArray("options")
+        if (arr != null && arr.length() > 0) {
+            options.clear()
+            for (i in 0 until arr.length()) {
+                val e = arr.getJSONObject(i)
+                options.add(CompareOption(e.optString("kind", "tbill"), e.optString("yield_pct"), e.optString("tenor_days", "364"), e.optString("yield_basis", "gross").ifBlank { "gross" }))
+            }
         }
     }
 }
