@@ -73,6 +73,7 @@ import online.malilab.app.data.Evidence
 import online.malilab.app.data.Note
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PushResult
+import online.malilab.app.data.RulesWatch
 import online.malilab.app.ui.theme.Mali
 
 private enum class SaveState(val label: String, val color: Color) {
@@ -118,6 +119,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     var message by remember(uid) { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     var dragId by remember(uid) { mutableStateOf<String?>(null) }
+    var rulesNow by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var dragDy by remember(uid) { mutableFloatStateOf(0f) }
 
     StatusBarIcons(darkIcons = false)
@@ -168,6 +170,10 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     fun setBlocks(list: List<Block>, structural: Boolean) {
         val d = doc ?: return
         commit(d.copy(blocks = list), structural)
+    }
+
+    LaunchedEffect(uid) {
+        try { rulesNow = RulesWatch.stamps() } catch (e: Exception) { /* offline: no warning, nothing is lost */ }
     }
 
     LaunchedEffect(uid) {
@@ -513,7 +519,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                             onDuplicate = { duplicate(b.id) },
                             onDelete = { remove(b.id) },
                             evidence = { blk, isFocused, replace ->
-                                EvidenceBlock(blk, isFocused, replace, onOpenCalc = { openCalculator(it) })
+                                EvidenceBlock(blk, isFocused, replace, onOpenCalc = { openCalculator(it) }, rulesNow = rulesNow)
                             },
                             modifier = if (dragId == b.id) Modifier.zIndex(1f).graphicsLayer { translationY = dragDy } else Modifier,
                             dragging = dragId == b.id,

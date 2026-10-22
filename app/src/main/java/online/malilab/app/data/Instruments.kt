@@ -201,6 +201,18 @@ class CompareForm : LabForm {
     }
 }
 
+// ============================================================================================ rule changes
+object RulesWatch {
+    /** The current version stamp of every tax rule, keyed by rule id. */
+    suspend fun stamps(): Map<String, String> {
+        val o = Auth.api("GET", "/api/v1/calc/rules/")
+        val arr = o.optJSONArray("rules") ?: return emptyMap()
+        val map = HashMap<String, String>()
+        for (i in 0 until arr.length()) arr.getJSONObject(i).let { map[it.optString("id")] = it.optString("stamp") }
+        return map
+    }
+}
+
 // ============================================================================================ talking to the website
 object InstrumentApi {
     suspend fun run(model: String, inputs: JSONObject): JSONObject {
@@ -214,12 +226,21 @@ object InstrumentApi {
 object InstrumentEvidence {
     private fun stamp(): String = NoteStore.nowIso()
 
-    fun calcInfo(result: JSONObject): JSONObject =
-        JSONObject()
+    fun calcInfo(result: JSONObject): JSONObject {
+        val c = JSONObject()
             .put("model", result.optString("model"))
             .put("version", result.optString("version"))
             .put("calculated_at", result.optString("calculated_at", stamp()))
             .put("inputs", JSONObject((result.optJSONObject("inputs") ?: JSONObject()).toString()))
+        // Remember which version of each tax rule was used, so the note can say when the rules have since changed.
+        val used = result.optJSONArray("rules")
+        if (used != null && used.length() > 0) {
+            val stamps = JSONObject()
+            for (i in 0 until used.length()) used.getJSONObject(i).let { stamps.put(it.optString("id"), it.optString("stamp")) }
+            c.put("rules", stamps)
+        }
+        return c
+    }
 
     private fun frame(type: String, mode: String, result: JSONObject, title: String?): JSONObject {
         val o = JSONObject().put("type", type).put("mode", mode).put("calc", calcInfo(result))

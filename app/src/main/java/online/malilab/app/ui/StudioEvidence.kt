@@ -62,7 +62,7 @@ private fun edited(block: Block, change: (JSONObject) -> Unit): Block {
  * assumptions and can be refreshed. Either kind can be reopened in the calculator.
  */
 @Composable
-fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, onOpenCalc: (Block) -> Unit) {
+fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, onOpenCalc: (Block) -> Unit, rulesNow: Map<String, String> = emptyMap()) {
     val raw = block.raw ?: return
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -72,6 +72,22 @@ fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, on
     val canRefresh = live && calc?.optJSONObject("inputs") != null &&
         !(raw.optString("type") == "interpretation" && !raw.optBoolean("generated", true))
     val type = raw.optString("type")
+    val usedRules = calc?.optJSONObject("rules")
+    val stale = live && canRefresh && usedRules != null &&
+        usedRules.keys().asSequence().any { id -> rulesNow[id]?.let { it != usedRules.optString(id) } == true }
+    fun refresh() {
+        if (busy) return
+        busy = true
+        problem = null
+        scope.launch {
+            try {
+                onReplace(online.malilab.app.data.Evidence.refresh(block))
+            } catch (e: ApiError) {
+                problem = if (e.status == 0) "Connect to the internet to refresh." else e.message
+            }
+            busy = false
+        }
+    }
 
     Column(
         Modifier
@@ -204,25 +220,21 @@ fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, on
                 fontSize = 11.sp, lineHeight = 15.sp, color = Mali.InkSoft,
             )
         }
+        if (stale) {
+            Column(Modifier.padding(top = 8.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Mali.Amber.copy(alpha = 0.12f)).padding(10.dp)) {
+                Text("The tax rules this uses have been updated since it was calculated, so the numbers may be out of date.", fontSize = 12.sp, lineHeight = 17.sp, color = Mali.Amber, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (busy) "Refreshing…" else "Refresh with the new rules", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Teal,
+                    modifier = Modifier.padding(top = 4.dp).clickable { refresh() },
+                )
+            }
+        }
         problem?.let { Text(it, fontSize = 12.sp, color = Mali.Pink, modifier = Modifier.padding(top = 4.dp)) }
         if (focused && calc?.optJSONObject("inputs") != null) {
             Row(Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ActionChip("Open in calculator", color = Mali.Indigo) { onOpenCalc(block) }
                 if (canRefresh) {
-                    ActionChip(if (busy) "Refreshing…" else "Refresh", color = Mali.Green) {
-                        if (!busy) {
-                            busy = true
-                            problem = null
-                            scope.launch {
-                                try {
-                                    onReplace(online.malilab.app.data.Evidence.refresh(block))
-                                } catch (e: ApiError) {
-                                    problem = if (e.status == 0) "Connect to the internet to refresh." else e.message
-                                }
-                                busy = false
-                            }
-                        }
-                    }
+                    ActionChip(if (busy) "Refreshing…" else "Refresh", color = Mali.Green) { refresh() }
                 }
                 if (live) ActionChip("Freeze as snapshot") {
                     onReplace(edited(block) { r -> r.put("mode", "snapshot"); r.put("captured_at", NoteStore.nowIso()) })
