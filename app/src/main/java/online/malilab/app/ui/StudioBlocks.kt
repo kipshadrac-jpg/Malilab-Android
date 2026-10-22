@@ -21,10 +21,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -153,10 +157,16 @@ fun NoteBlockView(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     evidence: @Composable (Block, Boolean, (Block) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+    dragging: Boolean = false,
+    onDragStart: () -> Unit = {},
+    onDragBy: (Float) -> Unit = {},
+    onDragEnd: () -> Unit = {},
 ) {
     val body = TextStyle(fontSize = 17.sp, lineHeight = 27.sp, color = Mali.Ink)
     Column(
-        Modifier
+        modifier
+            .then(if (dragging) Modifier.shadow(10.dp, RoundedCornerShape(14.dp)).background(Color.White, RoundedCornerShape(14.dp)) else Modifier)
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 5.dp),
     ) {
@@ -216,7 +226,7 @@ fun NoteBlockView(
             else -> Box(Modifier.clickable(onClick = onFocus)) { evidence(block, focused) { nb -> onRestyle(nb) } }
         }
         if (focused) {
-            BlockActions(block, onRestyle, onMoveUp, onMoveDown, onDuplicate, onDelete)
+            BlockActions(block, onRestyle, onMoveUp, onMoveDown, onDuplicate, onDelete, onDragStart, onDragBy, onDragEnd)
         }
     }
 }
@@ -229,11 +239,46 @@ private fun BlockActions(
     onMoveDown: (() -> Unit)?,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onDragStart: () -> Unit,
+    onDragBy: (Float) -> Unit,
+    onDragEnd: () -> Unit,
+) {
+    val start by rememberUpdatedState(onDragStart)
+    val drag by rememberUpdatedState(onDragBy)
+    val end by rememberUpdatedState(onDragEnd)
+    Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "≡ Hold to move",
+            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Mali.TealDeep,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(Mali.TealTint)
+                .pointerInput(block.id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { start() },
+                        onDrag = { change, amount -> change.consume(); drag(amount.y) },
+                        onDragEnd = { end() },
+                        onDragCancel = { end() },
+                    )
+                }
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        BlockChips(block, onRestyle, onMoveUp, onMoveDown, onDuplicate, onDelete)
+    }
+}
+
+@Composable
+private fun BlockChips(
+    block: Block,
+    onRestyle: (Block) -> Unit,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
+    onDuplicate: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     Row(
-        Modifier
-            .padding(top = 6.dp)
-            .horizontalScroll(rememberScrollState()),
+        Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -34,10 +34,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +50,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -113,6 +117,8 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
     var conflictCopy by remember(uid) { mutableStateOf<String?>(null) }
     var message by remember(uid) { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+    var dragId by remember(uid) { mutableStateOf<String?>(null) }
+    var dragDy by remember(uid) { mutableFloatStateOf(0f) }
 
     StatusBarIcons(darkIcons = false)
 
@@ -247,6 +253,60 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
         val b = list.removeAt(i)
         list.add(j, b)
         setBlocks(list, true)
+    }
+
+    // ---- drag to reorder ------------------------------------------------------------------------------------
+    fun startDrag(id: String) {
+        val cur = doc ?: return
+        undo.add(cur.title to cur.blocks)
+        if (undo.size > 60) undo.removeAt(0)
+        redo.clear()
+        memory.lastSnapshot = Long.MAX_VALUE / 2
+        dragId = id
+        dragDy = 0f
+        focusedId = id
+    }
+
+    fun endDrag() {
+        dragId = null
+        dragDy = 0f
+        memory.lastSnapshot = System.currentTimeMillis()
+        val cur = doc
+        val before = undo.lastOrNull()
+        if (cur != null && before != null && before.second.map { it.id } == cur.blocks.map { it.id }) undo.removeAt(undo.lastIndex)
+    }
+
+    /** Swaps the dragged block with the one it has been dragged over, keeping it under the finger. */
+    fun swapStep() {
+        val id = dragId ?: return
+        val d = doc ?: return
+        val info = listState.layoutInfo.visibleItemsInfo
+        val cur = info.firstOrNull { it.key == id } ?: return
+        val center = cur.offset + dragDy + cur.size / 2f
+        val target = info.firstOrNull { it.key != id && it.key != "title" && it.key != "end" && center >= it.offset && center <= it.offset + it.size } ?: return
+        val from = d.blocks.indexOfFirst { it.id == id }
+        val to = d.blocks.indexOfFirst { it.id == target.key }
+        if (from < 0 || to < 0 || from == to) return
+        val shift = if (to > from) (target.offset + target.size) - (cur.offset + cur.size) else target.offset - cur.offset
+        val list = d.blocks.toMutableList()
+        list.add(to, list.removeAt(from))
+        commit(d.copy(blocks = list), false)
+        dragDy -= shift
+    }
+
+    LaunchedEffect(dragId) {
+        if (dragId == null) return@LaunchedEffect
+        while (dragId != null) {
+            val li = listState.layoutInfo
+            val cur = li.visibleItemsInfo.firstOrNull { it.key == dragId }
+            if (cur != null) {
+                val center = cur.offset + dragDy + cur.size / 2f
+                val amount = if (center < li.viewportStartOffset + 120f) -18f else if (center > li.viewportEndOffset - 120f) 18f else 0f
+                if (amount != 0f) dragDy += listState.scrollBy(amount)
+            }
+            swapStep()
+            delay(16)
+        }
     }
 
     fun duplicate(id: String) {
@@ -455,6 +515,11 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                             evidence = { blk, isFocused, replace ->
                                 EvidenceBlock(blk, isFocused, replace, onOpenCalc = { openCalculator(it) })
                             },
+                            modifier = if (dragId == b.id) Modifier.zIndex(1f).graphicsLayer { translationY = dragDy } else Modifier,
+                            dragging = dragId == b.id,
+                            onDragStart = { startDrag(b.id) },
+                            onDragBy = { dy -> dragDy += dy },
+                            onDragEnd = { endDrag() },
                         )
                     }
                     item(key = "end") {
