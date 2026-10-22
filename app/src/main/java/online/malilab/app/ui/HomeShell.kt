@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import online.malilab.app.data.ApiError
+import online.malilab.app.data.Block
 import online.malilab.app.data.NoteStore
+import online.malilab.app.data.PracticeStore
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
 
@@ -61,9 +63,39 @@ fun HomeShell() {
     var lessonModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var studioUid by rememberSaveable { mutableStateOf<String?>(null) }
+    var practiceSlug by rememberSaveable { mutableStateOf<String?>(null) }
+    var practiceView by rememberSaveable { mutableIntStateOf(0) }
+    var historyOpen by rememberSaveable { mutableStateOf(false) }
+    var calcSlug by rememberSaveable { mutableStateOf<String?>(null) }
+    var calcTitle by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null
+    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null &&
+        practiceSlug == null && !historyOpen && calcSlug == null
+
+    // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
+    fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
+        scope.launch {
+            val known = PracticeStore.noteUid(slug)
+            val existing = if (known != null) {
+                try {
+                    NoteStore.open(known)
+                } catch (e: ApiError) {
+                    null
+                }
+            } else null
+            if (existing != null) {
+                NoteStore.update(existing.copy(blocks = existing.blocks + blocks))
+                NoteStore.pushLater(existing.uid)
+                studioUid = existing.uid
+            } else {
+                val uid = NoteStore.create(title = "Practice: $title".take(200), blocks = blocks, collection = "Practice")
+                PracticeStore.setNoteUid(slug, uid)
+                NoteStore.pushLater(uid)
+                studioUid = uid
+            }
+        }
+    }
 
     // The pen button on a playbook or lesson opens the person's own note for it in the Studio.
     fun openContextNote(kind: String, slug: String, title: String, legacyKey: String) {
@@ -84,6 +116,7 @@ fun HomeShell() {
             onOpenPlaybook = { openPlaybook = it },
             onOpenModule = { openModule = it },
             onOpenNote = { studioUid = it },
+            onOpenPractice = { historyOpen = true },
         )
         val pb = openPlaybook
         if (pb != null) {
@@ -99,9 +132,10 @@ fun HomeShell() {
         if (mod != null) {
             ModuleDetailScreen(
                 slug = mod,
-                active = lessonSlug == null && studioUid == null,
+                active = lessonSlug == null && studioUid == null && practiceSlug == null,
                 onBack = { openModule = null },
                 onOpenLesson = { lessonModule = mod; lessonSlug = it },
+                onOpenPractice = { practiceView = 0; practiceSlug = it },
             )
         }
         val ls = lessonSlug
@@ -114,6 +148,44 @@ fun HomeShell() {
                 onBack = { lessonSlug = null; lessonModule = null },
                 onOpenLesson = { lessonSlug = it },
                 onPlan = { title -> openContextNote("lesson", ls, title, "lesson-$ls") },
+            )
+        }
+        if (historyOpen) {
+            PracticeHistoryScreen(
+                active = practiceSlug == null && studioUid == null,
+                onBack = { historyOpen = false },
+                onOpen = { slug, attemptId, submitted -> practiceView = if (submitted) attemptId else 0; practiceSlug = slug },
+            )
+        }
+        val ps = practiceSlug
+        if (ps != null) {
+            androidx.compose.runtime.key(ps, practiceView) {
+                PracticeScreen(
+                    slug = ps,
+                    viewAttempt = practiceView,
+                    active = calcSlug == null && studioUid == null,
+                    onBack = { practiceSlug = null; practiceView = 0 },
+                    onOpenCalculator = { model, slug, title ->
+                        LabMemory.model = if (model in setOf("compound", "tbill", "tbond", "mmf", "sacco", "loan", "compare")) model else "compound"
+                        calcTitle = title
+                        calcSlug = slug
+                    },
+                    onCopyToPlan = { title, blocks ->
+                        scope.launch {
+                            val uid = NoteStore.create(title = title.take(200), blocks = blocks, collection = "Practice")
+                            NoteStore.pushLater(uid)
+                            studioUid = uid
+                        }
+                    },
+                )
+            }
+        }
+        val cs = calcSlug
+        if (cs != null) {
+            CalculatorHub(
+                seed = null,
+                onInsert = { blocks -> addToPracticeNote(cs, calcTitle, blocks); calcSlug = null },
+                onClose = { calcSlug = null },
             )
         }
         val studio = studioUid
@@ -137,6 +209,7 @@ private fun MainScaffold(
     onOpenPlaybook: (String) -> Unit,
     onOpenModule: (String) -> Unit,
     onOpenNote: (String) -> Unit,
+    onOpenPractice: () -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -165,7 +238,7 @@ private fun MainScaffold(
                 0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
                 1 -> LearnScreen(active = active, onOpen = onOpenModule)
                 2 -> PlanScreen(active = active, onOpen = onOpenNote)
-                else -> MeScreen(active = active)
+                else -> MeScreen(active = active, onOpenPractice = onOpenPractice)
             }
         }
     }

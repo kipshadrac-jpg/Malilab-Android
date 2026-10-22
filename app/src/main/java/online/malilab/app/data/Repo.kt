@@ -189,11 +189,16 @@ object Repo {
     private fun parseModuleDetail(body: String): ModuleDetail {
         val o = JSONObject(body)
         val lessons = o.optJSONArray("lessons") ?: JSONArray()
+        val practice = o.optJSONArray("practice") ?: JSONArray()
         return ModuleDetail(
             summary = parseModuleSummary(o),
             lessons = (0 until lessons.length()).map {
                 val l = lessons.getJSONObject(it)
                 LessonRef(l.optInt("n", it + 1), l.optString("slug"), l.optString("title"), l.optString("summary"))
+            },
+            practice = (0 until practice.length()).map {
+                val p = practice.getJSONObject(it)
+                PracticeRef(p.optInt("n", it + 1), p.optString("slug"), p.optString("title"), p.optString("classification", "required"))
             },
         )
     }

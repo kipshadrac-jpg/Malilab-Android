@@ -118,14 +118,21 @@ object Auth {
     /** The signed-in account, so notes on a shared phone never mix. */
     val accountKey: String get() = email.lowercase().replace(Regex("[^a-z0-9]"), "_")
 
+    /** Takes the progress the website sends back after a practice is submitted. */
+    fun applyProgress(o: JSONObject?) {
+        if (o != null) progress = parseProgress(o)
+    }
+
     private fun parseProgress(o: JSONObject): Progress {
         val lessons = o.optJSONArray("lessons")
+        val practice = o.optJSONArray("practice")
         val modules = o.optJSONArray("modules")
         return Progress(
             lessons = (0 until (lessons?.length() ?: 0)).map { lessons!!.optString(it) }.toSet(),
+            practice = (0 until (practice?.length() ?: 0)).map { practice!!.optString(it) }.toSet(),
             modules = (0 until (modules?.length() ?: 0)).associate { i ->
                 val m = modules!!.getJSONObject(i)
-                m.getString("slug") to ModuleProgress(m.optInt("done"), m.optInt("total"), m.optBoolean("complete"))
+                m.getString("slug") to ModuleProgress(m.optInt("done"), m.optInt("total"), m.optBoolean("complete"), m.optInt("practice_done"), m.optInt("practice_total"))
             },
         )
     }

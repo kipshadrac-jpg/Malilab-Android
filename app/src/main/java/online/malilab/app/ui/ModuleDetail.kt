@@ -46,7 +46,7 @@ private sealed interface ModState {
 }
 
 @Composable
-fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
+fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenLesson: (String) -> Unit, onOpenPractice: (String) -> Unit = {}) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(slug) { mutableStateOf<ModState>(ModState.Loading) }
     val accent = Mali.accentFor(slug)
@@ -105,6 +105,9 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Chip("Module", accent)
                                 Chip(if (m.lessonCount == 1) "1 lesson" else "${m.lessonCount} lessons", Mali.InkSoft)
+                                if (s.detail.practice.isNotEmpty()) {
+                                    Chip(if (s.detail.practice.size == 1) "1 practice" else "${s.detail.practice.size} practice", Mali.InkSoft)
+                                }
                             }
                             if (s.offline) {
                                 Spacer(Modifier.height(8.dp))
@@ -126,13 +129,16 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             }
                             val total = s.detail.lessons.size
                             val doneCount = s.detail.lessons.count { it.slug in done }
-                            val finished = total > 0 && doneCount == total
+                            val practiceOpen = s.detail.practice.any { it.classification == "required" && it.slug !in Auth.progress.practice }
+                            val finished = total > 0 && doneCount == total && !practiceOpen
                             val nextLesson = s.detail.lessons.firstOrNull { it.slug !in done } ?: s.detail.lessons.firstOrNull()
                             if (total > 0) {
                                 Spacer(Modifier.height(16.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        if (finished) "Module complete" else "$doneCount of $total lessons done",
+                                        if (finished) "Module complete"
+                                        else if (doneCount == total && practiceOpen) "Lessons done. Finish the practice to complete this module."
+                                        else "$doneCount of $total lessons done",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (finished) Mali.Green else Mali.InkSoft,
@@ -211,6 +217,57 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             }
                         }
                         Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(1.dp).background(Mali.Sand.copy(alpha = 0.6f)))
+                    }
+                    if (s.detail.practice.isNotEmpty()) {
+                        item {
+                            Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 6.dp)) {
+                                Text("Practice", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+                                Spacer(Modifier.height(2.dp))
+                                Text("Put it to work with your own numbers. Your answers stay private.", fontSize = 13.sp, color = Mali.InkSoft)
+                            }
+                        }
+                        items(s.detail.practice.size) { i ->
+                            val p = s.detail.practice[i]
+                            val practiceDone = p.slug in Auth.progress.practice
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onOpenPractice(p.slug) }
+                                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(if (practiceDone) Mali.Green else Mali.Amber.copy(alpha = 0.14f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        if (practiceDone) "✓" else "✎",
+                                        color = if (practiceDone) Color.White else Mali.Amber,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 16.sp,
+                                    )
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        when (p.classification) {
+                                            "optional" -> "PRACTICE · OPTIONAL"
+                                            "recommended" -> "PRACTICE · RECOMMENDED"
+                                            else -> "PRACTICE"
+                                        },
+                                        fontSize = 11.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.Bold, color = Mali.Amber,
+                                    )
+                                    Text(p.title, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+                                    if (practiceDone) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text("Done. Tap to review or try again.", fontSize = 13.sp, color = Mali.InkSoft)
+                                    }
+                                }
+                            }
+                            Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(1.dp).background(Mali.Sand.copy(alpha = 0.6f)))
+                        }
                     }
                     item { Spacer(Modifier.height(32.dp)) }
                 }

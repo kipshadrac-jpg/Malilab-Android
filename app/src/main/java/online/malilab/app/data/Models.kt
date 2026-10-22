@@ -35,12 +35,14 @@ data class LessonBlock(
 
 data class LessonDetail(val slug: String, val title: String, val summary: String, val blocks: List<LessonBlock>)
 
-data class ModuleProgress(val done: Int, val total: Int, val complete: Boolean)
+data class ModuleProgress(val done: Int, val total: Int, val complete: Boolean, val practiceDone: Int = 0, val practiceTotal: Int = 0)
 
-data class Progress(val lessons: Set<String> = emptySet(), val modules: Map<String, ModuleProgress> = emptyMap())
+data class Progress(val lessons: Set<String> = emptySet(), val modules: Map<String, ModuleProgress> = emptyMap(), val practice: Set<String> = emptySet())
 
 data class ModuleSummary(val slug: String, val title: String, val description: String, val lessonCount: Int)
 
 data class LessonRef(val n: Int, val slug: String, val title: String, val summary: String)
 
-data class ModuleDetail(val summary: ModuleSummary, val lessons: List<LessonRef>)
+data class PracticeRef(val n: Int, val slug: String, val title: String, val classification: String)
+
+data class ModuleDetail(val summary: ModuleSummary, val lessons: List<LessonRef>, val practice: List<PracticeRef> = emptyList())

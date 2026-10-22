@@ -33,7 +33,7 @@ import online.malilab.app.data.NoteStore
 import online.malilab.app.ui.theme.Mali
 
 @Composable
-fun MeScreen(active: Boolean) {
+fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     StatusBarIcons(darkIcons = false, active = active)
@@ -51,6 +51,12 @@ fun MeScreen(active: Boolean) {
                 "MY PLAN",
                 "Your notes are saved to your account, so they follow you to every phone. Find them in the Plan tab.",
                 Mali.Amber,
+            )
+            InfoCard(
+                "MY PRACTICE",
+                "See the answers you gave and any activity you have not finished. Tap to open.",
+                Mali.Green,
+                onClick = onOpenPractice,
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -78,12 +84,13 @@ fun MeScreen(active: Boolean) {
 }
 
 @Composable
-private fun InfoCard(label: String, text: String, color: Color) {
+private fun InfoCard(label: String, text: String, color: Color, onClick: (() -> Unit)? = null) {
     Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(color.copy(alpha = 0.07f))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp),
     ) {
         Text(label, fontSize = 12.sp, letterSpacing = 1.4.sp, fontWeight = FontWeight.ExtraBold, color = color)
