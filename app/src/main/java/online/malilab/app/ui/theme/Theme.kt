@@ -49,7 +49,7 @@ object Mali {
         dark = prefs.getString("mode", "light") == "dark"
     }
 
-    fun setDark(on: Boolean) {
+    fun choose(on: Boolean) {
         dark = on
         if (::prefs.isInitialized) prefs.edit().putString("mode", if (on) "dark" else "light").apply()
     }

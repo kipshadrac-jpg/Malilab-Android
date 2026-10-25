@@ -78,8 +78,8 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                 )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionChip("Light", selected = !Mali.dark) { Mali.setDark(false) }
-                    ActionChip("Dark", selected = Mali.dark) { Mali.setDark(true) }
+                    ActionChip("Light", selected = !Mali.dark) { Mali.choose(false) }
+                    ActionChip("Dark", selected = Mali.dark) { Mali.choose(true) }
                 }
             }
             Spacer(Modifier.height(6.dp))
