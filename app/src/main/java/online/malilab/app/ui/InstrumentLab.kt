@@ -160,7 +160,7 @@ fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>
         }
         header()
         Row(
-            Modifier.fillMaxWidth().background(Color.White).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().background(Mali.Surface).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             INSTRUMENT_TABS.forEachIndexed { i, t -> ActionChip(t, selected = tab == i) { tab = i } }
@@ -180,7 +180,7 @@ fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>
             toast?.let {
                 Text(
                     it, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(18.dp).clip(RoundedCornerShape(50)).background(Mali.TealDeep).padding(horizontal = 20.dp, vertical = 12.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(18.dp).clip(RoundedCornerShape(50)).background(Mali.TealFixed).padding(horizontal = 20.dp, vertical = 12.dp),
                 )
             }
         }
@@ -343,7 +343,7 @@ private fun InstrumentResults(
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Mali.Amber.copy(alpha = 0.12f)).padding(14.dp),
             )
         }
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(16.dp)) {
             Text(head.optString("label"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
             Text(head.optString("value"), fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
             if (head.optString("caption").isNotBlank()) Text(head.optString("caption"), fontSize = 14.sp, color = Mali.InkSoft)
@@ -405,7 +405,7 @@ internal fun ChartSection(result: JSONObject, request: (String, (String) -> List
     val xName = c.optString("x_label", "Year").ifBlank { "Year" }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(c.optString("title"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(14.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(14.dp)) {
             LineChart(
                 xs, chartSeries(names, values), xTitle = xName,
                 readoutLabel = { x -> xName + " " + (if (x % 1.0 == 0.0) x.toInt().toString() else String.format(java.util.Locale.US, "%.1f", x)) },
@@ -435,13 +435,13 @@ internal fun TableSection(result: JSONObject, request: (String, (String) -> List
     fun width(c: Int) = if (cols.optJSONObject(c)?.optString("key") in listOf("what", "factor", "scenario")) 176.dp else 112.dp
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(t.optString("title"), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).horizontalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Mali.Surface).horizontalScroll(rememberScrollState())) {
             Row(Modifier.background(Mali.TealTint).padding(vertical = 8.dp)) {
                 for (c in 0 until cols.length()) Text(cols.getJSONObject(c).optString("label"), Modifier.width(width(c)).padding(horizontal = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
             }
             for (r in 0 until limit) {
                 val row = rows.getJSONArray(r)
-                Row(Modifier.background(if (r % 2 == 0) Color.White else Mali.Cream).padding(vertical = 7.dp)) {
+                Row(Modifier.background(if (r % 2 == 0) Mali.Surface else Mali.Cream).padding(vertical = 7.dp)) {
                     for (c in 0 until row.length()) {
                         val kind = cols.optJSONObject(c)?.optString("kind")
                         Text(if (kind == "money") Fmt.money(row.optString(c)) else row.optString(c), Modifier.width(width(c)).padding(horizontal = 6.dp), fontSize = 13.sp, color = Mali.Ink)

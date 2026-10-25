@@ -61,7 +61,7 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
 
     StatusBarIcons(darkIcons = progress > 0.5f, active = active)
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ScreenHeader("Learn", "Each module is a book of lessons.") }
             when (val s = state) {
@@ -113,7 +113,7 @@ private fun ModuleRow(m: ModuleSummary, onOpen: () -> Unit) {
         m.lessonCount == 1 -> "1 lesson"
         else -> "${m.lessonCount} lessons"
     }
-    Column(Modifier.fillMaxWidth().background(Color.White).clickable(onClick = onOpen)) {
+    Column(Modifier.fillMaxWidth().background(Mali.Surface).clickable(onClick = onOpen)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 18.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),

@@ -58,7 +58,7 @@ fun PracticeHistoryScreen(active: Boolean, onBack: () -> Unit, onOpen: (slug: St
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.White)) {
+    Column(Modifier.fillMaxSize().background(Mali.Surface)) {
         Row(
             Modifier.fillMaxWidth().background(Mali.TealTint).statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

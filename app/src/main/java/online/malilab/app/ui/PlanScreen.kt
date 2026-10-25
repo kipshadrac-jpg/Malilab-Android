@@ -77,7 +77,7 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(50))
-                            .background(Color.White)
+                            .background(Mali.Surface)
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -187,7 +187,7 @@ private fun NoteCard(e: NoteEntry, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(Mali.Surface)
             .clickable(onClick = onClick),
     ) {
         Box(Modifier.width(6.dp).height(110.dp).background(accent))
@@ -250,7 +250,7 @@ private fun TemplatePicker(onPick: (String) -> Unit, onClose: () -> Unit) {
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 5.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White)
+                            .background(Mali.Surface)
                             .clickable { onPick(t.id) }
                             .padding(14.dp),
                     ) {

@@ -191,7 +191,7 @@ fun PracticeScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.White).imePadding()) {
+    Column(Modifier.fillMaxSize().background(Mali.Surface).imePadding()) {
         Row(
             Modifier.fillMaxWidth().background(Mali.TealTint).statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -261,7 +261,7 @@ fun PracticeScreen(
                     if (act.safety.isNotBlank()) PracticeNote(act.safety)
                     Spacer(Modifier.height(4.dp))
                 }
-                Column(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 16.dp, vertical = 10.dp).navigationBarsPadding()) {
+                Column(Modifier.fillMaxWidth().background(Mali.Surface).padding(horizontal = 16.dp, vertical = 10.dp).navigationBarsPadding()) {
                     val b = banner
                     if (b != null) Text(b, fontSize = 14.sp, color = Mali.Pink, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 6.dp))
                     if (saveNote.isNotBlank()) Text(saveNote, fontSize = 12.sp, color = Mali.InkSoft, modifier = Modifier.padding(bottom = 6.dp))
@@ -431,7 +431,7 @@ private fun ChoiceRow(label: String, selected: Boolean, square: Boolean, onClick
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) Mali.Teal.copy(alpha = 0.12f) else Color.White)
+            .background(if (selected) Mali.Teal.copy(alpha = 0.12f) else Mali.Surface)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -9,6 +9,7 @@ import online.malilab.app.data.Billing
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PracticeStore
 import online.malilab.app.data.Repo
+import online.malilab.app.ui.theme.Mali
 
 class MaliApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
@@ -18,6 +19,7 @@ class MaliApp : Application(), ImageLoaderFactory {
         NoteStore.init(this)
         PracticeStore.init(this)
         Billing.init(this)
+        Mali.init(this)
     }
 
     // The site draws playbook covers as SVG pictures, so images are loaded with an SVG decoder as well.

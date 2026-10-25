@@ -172,7 +172,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
         }
         header()
         Row(
-            Modifier.fillMaxWidth().background(Color.White).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().background(Mali.Surface).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TABS.forEachIndexed { i, t -> ActionChip(t, selected = tab == i) { tab = i } }
@@ -194,7 +194,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
                         .align(Alignment.BottomCenter)
                         .padding(18.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Mali.TealDeep)
+                        .background(Mali.TealFixed)
                         .padding(horizontal = 20.dp, vertical = 12.dp),
                 )
             }
@@ -245,7 +245,7 @@ internal fun ModeRow(title: String, blurb: String, selected: Boolean, onClick: (
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .border(2.dp, if (selected) Mali.Teal else Mali.Sand, RoundedCornerShape(12.dp))
-            .background(if (selected) Mali.TealTint else Color.White)
+            .background(if (selected) Mali.TealTint else Mali.Surface)
             .clickable(onClick = onClick)
             .padding(12.dp),
     ) {
@@ -258,7 +258,7 @@ internal fun ModeRow(title: String, blurb: String, selected: Boolean, onClick: (
 @Composable
 internal fun fieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = Mali.Teal, unfocusedBorderColor = Mali.Sand, cursorColor = Mali.Teal,
-    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, errorContainerColor = Color.White,
+    focusedContainerColor = Mali.Surface, unfocusedContainerColor = Mali.Surface, errorContainerColor = Mali.Surface,
     errorBorderColor = Mali.Pink,
 )
 
@@ -300,7 +300,7 @@ internal fun Section(title: String, note: String = "", content: @Composable () -
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .background(Mali.Surface)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -535,8 +535,8 @@ private fun SummaryTab(
                 Text(solution.optString("explanation"), fontSize = 14.sp, lineHeight = 20.sp, color = Color.White.copy(alpha = 0.92f))
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Insert into note", color = Mali.TealDeep, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White)
+                    "Insert into note", color = Mali.TealFixed, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Mali.Surface)
                         .clickable { ask(block.raw?.optString("label").orEmpty()) { m -> listOf(Evidence.solutionMetric(solution, result, m, Evidence.calcInfo(result, inputs, solve))) } }
                         .padding(horizontal = 16.dp, vertical = 9.dp),
                 )
@@ -629,7 +629,7 @@ private fun kindWords(kind: String) = when (kind) {
 
 @Composable
 internal fun MetricCard(label: String, value: String, modifier: Modifier, onInsert: () -> Unit) {
-    Column(modifier.clip(RoundedCornerShape(16.dp)).background(Color.White).padding(14.dp)) {
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(Mali.Surface).padding(14.dp)) {
         Text(label, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
         Spacer(Modifier.height(4.dp))
         Text(value, fontSize = 18.sp, lineHeight = 23.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
@@ -645,7 +645,7 @@ internal fun InfoLine(text: String, color: Color) {
 
 @Composable
 internal fun Card(title: String, note: String, content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title.uppercase(), fontSize = 12.sp, letterSpacing = 1.3.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Teal)
         if (note.isNotBlank()) Text(note, fontSize = 13.sp, lineHeight = 18.sp, color = Mali.InkSoft)
         content()
@@ -673,7 +673,7 @@ private fun GraphTab(outcome: CalcOutcome?, inputs: JSONObject, calc: JSONObject
         if (!s.isNull("depletion_month")) add(ChartMark(x = s.optInt("depletion_month") / 12.0, label = "Runs out"))
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(14.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(14.dp)) {
             LineChart(xs, chartSeries(names, values), marks = marks)
         }
         Text("Show", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
@@ -802,7 +802,7 @@ private fun TableTab(outcome: CalcOutcome?, inputs: JSONObject, solve: String?, 
                     }
                     itemsIndexed(rows) { n, (idx, cells) ->
                         val on = idx !in excluded
-                        Row(Modifier.background(if (n % 2 == 0) Color.White else Mali.Cream).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.background(if (n % 2 == 0) Mali.Surface else Mali.Cream).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(on, { excluded = if (it) excluded - idx else excluded + idx }, modifier = Modifier.width(52.dp), colors = CheckboxDefaults.colors(checkedColor = Mali.Teal))
                             cells.forEach { Text(it, Modifier.width(cellW), fontSize = 13.sp, color = if (on) Mali.Ink else Mali.InkSoft.copy(alpha = 0.5f)) }
                         }
@@ -907,7 +907,7 @@ private fun CompareTab(outcome: CalcOutcome?, effective: JSONObject, ask: (Strin
                 val r = rows.getJSONObject(i)
                 val delta = r.optString("delta_final_balance")
                 val d = delta.toDoubleOrNull() ?: 0.0
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).padding(14.dp)) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Mali.Surface).padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(r.optString("name"), Modifier.weight(1f), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
                         if (i > 0) ActionChip("Remove", color = Mali.Pink) { scenarios.removeAt(i - 1) }
@@ -935,7 +935,7 @@ private fun CompareTab(outcome: CalcOutcome?, effective: JSONObject, ask: (Strin
                 val pts = rows.getJSONObject(r).getJSONObject("result").getJSONArray("series")
                 (0 until pts.length()).map { pts.getJSONObject(it).optString("closing", "0").toDoubleOrNull() ?: 0.0 }
             }
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(14.dp)) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(14.dp)) {
                 Text("BALANCE UNDER EACH WHAT-IF", fontSize = 12.sp, letterSpacing = 1.3.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Teal)
                 Spacer(Modifier.height(8.dp))
                 LineChart(xs, chartSeries(names, values))

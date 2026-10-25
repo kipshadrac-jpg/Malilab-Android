@@ -71,7 +71,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         when (val s = state) {
             is ModState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Opening the module…", color = Mali.InkSoft, fontSize = 16.sp)

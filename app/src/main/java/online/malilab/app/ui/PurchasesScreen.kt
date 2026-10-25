@@ -69,7 +69,7 @@ fun PurchasesScreen(active: Boolean, onClose: () -> Unit, onBuy: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.White)) {
+    Column(Modifier.fillMaxSize().background(Mali.Surface)) {
         Row(
             Modifier.fillMaxWidth().background(Mali.TealTint).statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

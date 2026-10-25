@@ -107,7 +107,7 @@ fun LessonScreen(
     val next = if (index >= 0) lessons.getOrNull(index + 1) else null
     val isDone = lessonSlug in Auth.progress.lessons
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         when (val s = state) {
             is LessonState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Opening the lesson…", color = Mali.InkSoft, fontSize = 16.sp)
@@ -280,7 +280,7 @@ private fun Congratulations(moduleTitle: String, lessonCount: Int, accent: Color
                 Modifier.size(110.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(Modifier.size(80.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(80.dp).clip(CircleShape).background(Mali.Surface), contentAlignment = Alignment.Center) {
                     Text("✓", fontSize = 44.sp, fontWeight = FontWeight.ExtraBold, color = accent)
                 }
             }
@@ -311,7 +311,7 @@ private fun Congratulations(moduleTitle: String, lessonCount: Int, accent: Color
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(Color.White).clickable(onClick = onPlan).padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(Mali.Surface).clickable(onClick = onPlan).padding(vertical = 16.dp),
             )
             Spacer(Modifier.height(12.dp))
             Text(

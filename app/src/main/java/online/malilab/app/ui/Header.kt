@@ -36,7 +36,7 @@ fun ScreenHeader(title: String, subtitle: String) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(
-                Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Color.White),
+                Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Mali.Surface),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(44.dp))

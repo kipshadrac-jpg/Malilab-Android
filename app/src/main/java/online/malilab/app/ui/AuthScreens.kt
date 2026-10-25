@@ -92,7 +92,7 @@ private fun Landing(onSignIn: () -> Unit, onRegister: () -> Unit) {
         ) {
             Spacer(Modifier.weight(1f))
             Box(
-                Modifier.size(110.dp).clip(RoundedCornerShape(30.dp)).background(Color.White),
+                Modifier.size(110.dp).clip(RoundedCornerShape(30.dp)).background(Mali.Surface),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(90.dp))
@@ -122,7 +122,7 @@ private fun BigButton(text: String, filled: Boolean, enabled: Boolean = true, on
         fontSize = 17.sp,
         fontWeight = FontWeight.ExtraBold,
         textAlign = TextAlign.Center,
-        color = if (filled) Mali.TealDeep else Color.White,
+        color = if (filled) Mali.TealFixed else Color.White,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(50))
@@ -155,7 +155,7 @@ private fun FormPage(title: String, subtitle: String, onBack: () -> Unit, conten
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(28.dp))
-                    .background(Color.White)
+                    .background(Mali.Surface)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 content = content,

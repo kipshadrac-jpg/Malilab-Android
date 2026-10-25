@@ -93,7 +93,7 @@ fun EvidenceBlock(block: Block, focused: Boolean, onReplace: (Block) -> Unit, on
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(Mali.Surface)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -257,7 +257,7 @@ private fun TableBlock(raw: JSONObject) {
         }
         for (r in 0 until limit) {
             val row = rows.getJSONArray(r)
-            Row(Modifier.background(if (r % 2 == 0) Color.White else Mali.Cream).padding(vertical = 5.dp)) {
+            Row(Modifier.background(if (r % 2 == 0) Mali.Surface else Mali.Cream).padding(vertical = 5.dp)) {
                 for (c in 0 until row.length()) Text(row.optString(c), Modifier.width(cellW(c)).padding(horizontal = 4.dp), fontSize = 12.sp, color = Mali.Ink)
             }
         }

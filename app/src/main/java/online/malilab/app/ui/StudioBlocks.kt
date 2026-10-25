@@ -167,7 +167,7 @@ fun NoteBlockView(
     val body = TextStyle(fontSize = 17.sp, lineHeight = 27.sp, color = Mali.Ink)
     Column(
         modifier
-            .then(if (dragging) Modifier.shadow(10.dp, RoundedCornerShape(14.dp)).background(Color.White, RoundedCornerShape(14.dp)) else Modifier)
+            .then(if (dragging) Modifier.shadow(10.dp, RoundedCornerShape(14.dp)).background(Mali.Surface, RoundedCornerShape(14.dp)) else Modifier)
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 5.dp),
     ) {
@@ -310,7 +310,7 @@ fun ActionChip(label: String, selected: Boolean = false, color: Color = Mali.Tea
         label,
         fontSize = 13.sp,
         fontWeight = FontWeight.Bold,
-        color = if (selected) Color.White else color,
+        color = if (selected) Mali.OnSolid else color,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(if (selected) color else color.copy(alpha = 0.10f))

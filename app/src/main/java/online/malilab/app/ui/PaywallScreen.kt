@@ -112,7 +112,7 @@ fun PaywallScreen(moduleSlug: String?, moduleTitle: String, active: Boolean, onC
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.White).imePadding()) {
+    Column(Modifier.fillMaxSize().background(Mali.Surface).imePadding()) {
         Row(
             Modifier.fillMaxWidth().background(Mali.TealTint).statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

@@ -18,7 +18,7 @@ import online.malilab.app.data.Block
 import online.malilab.app.data.Fmt
 import online.malilab.app.data.Note
 import online.malilab.app.data.NoteStore
-import online.malilab.app.ui.theme.Mali
+import online.malilab.app.ui.theme.MaliLight
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -83,14 +83,14 @@ private class Writer(val note: Note) {
         private val width = PW - 2 * MARGIN
         private val bottom = PH - MARGIN - 14f
 
-        private val ink = argb(Mali.Ink)
-        private val soft = argb(Mali.InkSoft)
-        private val teal = argb(Mali.Teal)
-        private val indigo = argb(Mali.Indigo)
-        private val pink = argb(Mali.Pink)
-        private val sand = argb(Mali.Sand)
-        private val tint = argb(Mali.TealTint)
-        private val chartColors = listOf(Mali.Teal, Mali.Indigo, Mali.Pink, Mali.Amber, Mali.Purple, Mali.Green).map { argb(it) }
+        private val ink = argb(MaliLight.Ink)
+        private val soft = argb(MaliLight.InkSoft)
+        private val teal = argb(MaliLight.Teal)
+        private val indigo = argb(MaliLight.Indigo)
+        private val pink = argb(MaliLight.Pink)
+        private val sand = argb(MaliLight.Sand)
+        private val tint = argb(MaliLight.TealTint)
+        private val chartColors = listOf(MaliLight.Teal, MaliLight.Indigo, MaliLight.Pink, MaliLight.Amber, MaliLight.Purple, MaliLight.Green).map { argb(it) }
 
         private fun paint(size: Float, color: Int = ink, bold: Boolean = false, italic: Boolean = false): TextPaint =
             TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -392,7 +392,7 @@ private class Writer(val note: Note) {
             val sum = weights.sum()
             val widths = weights.map { width * it / sum }
             val size = if (n >= 7) 7.2f else if (n >= 5) 8f else 9f
-            val head = paint(size, argb(Mali.TealDeep), bold = true)
+            val head = paint(size, argb(MaliLight.TealDeep), bold = true)
             val cell = paint(size, ink)
 
             fun drawHeader() {

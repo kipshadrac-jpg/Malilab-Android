@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,7 +40,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
     var busy by remember { mutableStateOf(false) }
     StatusBarIcons(darkIcons = false, active = active)
 
-    Column(Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxSize().background(Mali.Surface).verticalScroll(rememberScrollState())) {
         ScreenHeader("Me", "Your MaliLab account.")
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             InfoCard("SIGNED IN AS", Auth.email.ifBlank { "Your account" }, Mali.Teal)
@@ -66,6 +67,21 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                 Mali.Green,
                 onClick = onOpenPractice,
             )
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Mali.Purple.copy(alpha = 0.07f)).padding(16.dp),
+            ) {
+                Text("APPEARANCE", fontSize = 12.sp, letterSpacing = 1.4.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Purple)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Choose how MaliLab looks. It stays as you set it, whatever your phone is set to.",
+                    fontSize = 16.sp, lineHeight = 23.sp, color = Mali.Ink,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ActionChip("Light", selected = !Mali.dark) { Mali.setDark(false) }
+                    ActionChip("Dark", selected = Mali.dark) { Mali.setDark(true) }
+                }
+            }
             Spacer(Modifier.height(6.dp))
             Text(
                 if (busy) "Signing out…" else "Sign out",

@@ -159,7 +159,7 @@ private fun DetailContent(d: PlaybookDetail, offline: Boolean, listState: LazyLi
             }
         }
         if (s.goal.isNotBlank()) item {
-            AccentSection(label = "GOAL", color = Mali.Teal, background = Color.White) {
+            AccentSection(label = "GOAL", color = Mali.Teal, background = Mali.Surface) {
                 RichBlocks(s.goal, color = Mali.Ink, bulletColor = Mali.Teal)
             }
         }
@@ -208,7 +208,7 @@ private fun DetailContent(d: PlaybookDetail, offline: Boolean, listState: LazyLi
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(Color.White)
+                        .background(Mali.Surface)
                         .clickable { onOpenModule(m.slug) }
                         .padding(horizontal = 20.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -244,7 +244,7 @@ private fun AccentSection(label: String, color: Color, background: Color, conten
 
 @Composable
 private fun NeedsSection(needs: List<String>) {
-    Column(Modifier.fillMaxWidth().background(Color(0xFFFFF8E8)).padding(horizontal = 18.dp, vertical = 18.dp)) {
+    Column(Modifier.fillMaxWidth().background(Mali.Warm).padding(horizontal = 18.dp, vertical = 18.dp)) {
         Text("WHAT YOU NEED", fontSize = 14.sp, letterSpacing = 1.6.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Amber)
         Spacer(Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -254,7 +254,7 @@ private fun NeedsSection(needs: List<String>) {
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
+                        .background(Mali.Surface)
                         .padding(12.dp),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -271,7 +271,7 @@ private fun NeedsSection(needs: List<String>) {
 
 @Composable
 private fun StepCard(step: online.malilab.app.data.Step, accent: Color) {
-    Column(Modifier.fillMaxWidth().background(Color.White)) {
+    Column(Modifier.fillMaxWidth().background(Mali.Surface)) {
         Box(Modifier.fillMaxWidth().height(5.dp).background(accent))
         Row(Modifier.padding(start = 16.dp, end = 18.dp, top = 16.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(Modifier.size(40.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
@@ -370,8 +370,8 @@ fun NotesSheet(slug: String, onClose: () -> Unit) {
                     focusedBorderColor = Mali.Teal,
                     unfocusedBorderColor = Mali.Sand,
                     cursorColor = Mali.Teal,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Mali.Surface,
+                    unfocusedContainerColor = Mali.Surface,
                 ),
             )
             Spacer(Modifier.height(14.dp))

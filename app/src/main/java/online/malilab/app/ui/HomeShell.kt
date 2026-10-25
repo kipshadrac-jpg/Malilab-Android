@@ -245,7 +245,7 @@ private fun MainScaffold(
     Scaffold(
         containerColor = Mali.Cream,
         bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+            NavigationBar(containerColor = Mali.Surface, tonalElevation = 0.dp) {
                 tabs.forEachIndexed { i, tab ->
                     NavigationBarItem(
                         selected = selected == i,

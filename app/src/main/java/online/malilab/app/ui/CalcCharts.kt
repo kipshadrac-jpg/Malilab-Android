@@ -163,7 +163,7 @@ fun LineChart(
                 var t = bottom
                 while (t <= top + step / 2) {
                     val y = py(t)
-                    drawLine(Color(0xFFE7DDD4), Offset(left, y), Offset(left + w, y), strokeWidth = 1.dp.toPx())
+                    drawLine(Mali.Sand, Offset(left, y), Offset(left + w, y), strokeWidth = 1.dp.toPx())
                     val lay = measurer.measure(Fmt.compact(t), axisStyle)
                     drawText(lay, topLeft = Offset(left - 6.dp.toPx() - lay.size.width, y - lay.size.height / 2f))
                     t += step

@@ -81,7 +81,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
     // The header and the phone's status bar are the same teal, so white icons read well.
     StatusBarIcons(darkIcons = progress > 0.5f, active = active)
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ScreenHeader("Playbooks", "Pick a situation. Follow the steps.") }
             when (val s = state) {
@@ -127,7 +127,7 @@ fun PlaybookCard(p: PlaybookSummary, onOpen: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Mali.Surface)
             .clickable(onClick = onOpen)
             .padding(bottom = 22.dp),
     ) {
@@ -199,7 +199,7 @@ fun SkeletonCard() {
         animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
         label = "alpha",
     )
-    Column(Modifier.fillMaxWidth().background(Color.White).alpha(a).padding(bottom = 22.dp)) {
+    Column(Modifier.fillMaxWidth().background(Mali.Surface).alpha(a).padding(bottom = 22.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f).background(Mali.TealTint))
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.fillMaxWidth(0.8f).height(16.dp).clip(RoundedCornerShape(6.dp)).background(Mali.Sand))
@@ -214,7 +214,7 @@ fun MessageBlock(title: String, body: String, action: String, onAction: () -> Un
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Mali.Surface)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

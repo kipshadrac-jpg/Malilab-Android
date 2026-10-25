@@ -21,13 +21,21 @@ import androidx.compose.ui.unit.sp
 import online.malilab.app.ui.theme.Mali
 
 /** The same small text language the website uses: blank line = new paragraph, "- " = bullet, **bold**, ==colour:text==. */
-private val highlightColors = mapOf(
+private val lightHighlights = mapOf(
     "yellow" to Color(0xFFFFF1A0),
     "green" to Color(0xFFC4ECD2),
     "blue" to Color(0xFFCDE2FF),
     "pink" to Color(0xFFFFD0E2),
     "orange" to Color(0xFFFFD9B3),
 )
+private val darkHighlights = mapOf(
+    "yellow" to Color(0xFF5E5416),
+    "green" to Color(0xFF1E5236),
+    "blue" to Color(0xFF244A78),
+    "pink" to Color(0xFF6A2842),
+    "orange" to Color(0xFF6A4520),
+)
+private val highlightColors: Map<String, Color> get() = if (Mali.dark) darkHighlights else lightHighlights
 
 private val inlinePattern = Regex("""==(?:(yellow|green|blue|pink|orange):)?(.+?)==|\*\*(.+?)\*\*""")
 private val bulletPattern = Regex("""^\s*[-*•]\s+(.*)$""")

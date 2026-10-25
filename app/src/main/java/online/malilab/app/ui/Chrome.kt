@@ -46,7 +46,9 @@ fun StatusBarIcons(darkIcons: Boolean, active: Boolean = true) {
     SideEffect {
         val window = (view.context as? Activity)?.window
         if (active && window != null) {
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkIcons
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = darkIcons && !Mali.dark
+            controller.isAppearanceLightNavigationBars = !Mali.dark
         }
     }
 }
@@ -76,7 +78,7 @@ fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f) {
         Modifier
             .size(42.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = circleAlpha))
+            .background(Mali.Surface.copy(alpha = circleAlpha))
             .clickable(onClick = onBack)
             .semantics { contentDescription = "Back" },
         contentAlignment = Alignment.Center,

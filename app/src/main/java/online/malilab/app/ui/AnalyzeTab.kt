@@ -96,7 +96,7 @@ internal fun AnalyzeTab(effective: JSONObject, ready: Boolean, initial: String?,
             )
         }
         val head = r.getJSONObject("headline")
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mali.Surface).padding(16.dp)) {
             Text(head.optString("label"), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Mali.InkSoft)
             Text(head.optString("value"), fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
             Text(head.optString("caption"), fontSize = 14.sp, lineHeight = 20.sp, color = Mali.InkSoft)

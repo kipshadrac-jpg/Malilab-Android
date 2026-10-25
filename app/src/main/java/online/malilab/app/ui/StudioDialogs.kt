@@ -85,7 +85,7 @@ fun MetaDialog(
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Mali.Teal, unfocusedBorderColor = Mali.Sand, cursorColor = Mali.Teal,
-                            focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Mali.Surface, unfocusedContainerColor = Mali.Surface,
                         ),
                     )
                     ActionChip("Add") { addDraft() }
@@ -136,7 +136,7 @@ fun HistoryDialog(uid: String, onRestore: (VersionInfo) -> Unit, onDismiss: () -
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.White)
+                                    .background(Mali.Surface)
                                     .clickable { confirm = v }
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,

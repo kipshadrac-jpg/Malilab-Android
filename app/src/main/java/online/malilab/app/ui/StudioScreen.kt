@@ -420,7 +420,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                         .semantics { contentDescription = "More" },
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.MoreVert, null, tint = Color.White) }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = Color.White) {
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = Mali.Surface) {
                     MenuRow("Collection and tags") { menuOpen = false; showMeta = true }
                     MenuRow("Version history") { menuOpen = false; memory.job?.cancel(); flushLocal(); showHistory = true }
                     MenuRow("Duplicate note") {
@@ -652,7 +652,7 @@ private fun StudioToolbar(onAdd: (String) -> Unit) {
                 .fillMaxWidth()
                 .shadow(8.dp, RoundedCornerShape(50))
                 .clip(RoundedCornerShape(50))
-                .background(Color.White)
+                .background(Mali.Surface)
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
