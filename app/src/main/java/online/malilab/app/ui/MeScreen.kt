@@ -34,7 +34,7 @@ import online.malilab.app.data.NoteStore
 import online.malilab.app.ui.theme.Mali
 
 @Composable
-fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: () -> Unit = {}) {
+fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: () -> Unit = {}, onOpenPurchases: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     StatusBarIcons(darkIcons = false, active = active)
@@ -48,6 +48,12 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                 billingSummary(),
                 Mali.Indigo,
                 onClick = if (Billing.status.paywall && !Billing.status.allModules) onOpenPaywall else null,
+            )
+            InfoCard(
+                "MY PURCHASES",
+                "Your M-Pesa payments and receipts, and the modules that are yours for good. Tap to open.",
+                Mali.Teal,
+                onClick = onOpenPurchases,
             )
             InfoCard(
                 "MY PLAN",

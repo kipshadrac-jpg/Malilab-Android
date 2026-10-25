@@ -72,6 +72,7 @@ fun HomeShell() {
     var calcSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var calcTitle by rememberSaveable { mutableStateOf("") }
     var paywallOpen by rememberSaveable { mutableStateOf(false) }
+    var purchasesOpen by rememberSaveable { mutableStateOf(false) }
     var paywallSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var paywallTitle by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -79,7 +80,7 @@ fun HomeShell() {
     LaunchedEffect(Unit) { Billing.load() }
 
     val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null &&
-        practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen
+        practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen
 
     // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
     fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
@@ -126,6 +127,7 @@ fun HomeShell() {
             onOpenNote = { studioUid = it },
             onOpenPractice = { historyOpen = true },
             onOpenPaywall = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
+            onOpenPurchases = { purchasesOpen = true },
         )
         val pb = openPlaybook
         if (pb != null) {
@@ -200,6 +202,13 @@ fun HomeShell() {
                 )
             }
         }
+        if (purchasesOpen) {
+            PurchasesScreen(
+                active = studioUid == null && !paywallOpen,
+                onClose = { purchasesOpen = false },
+                onBuy = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
+            )
+        }
         val cs = calcSlug
         if (cs != null) {
             CalculatorHub(
@@ -231,6 +240,7 @@ private fun MainScaffold(
     onOpenNote: (String) -> Unit,
     onOpenPractice: () -> Unit,
     onOpenPaywall: () -> Unit,
+    onOpenPurchases: () -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -260,7 +270,7 @@ private fun MainScaffold(
                     0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
                     1 -> LearnScreen(active = active, onOpen = onOpenModule)
                     2 -> PlanScreen(active = active, onOpen = onOpenNote)
-                    else -> MeScreen(active = active, onOpenPractice = onOpenPractice, onOpenPaywall = onOpenPaywall)
+                    else -> MeScreen(active = active, onOpenPractice = onOpenPractice, onOpenPaywall = onOpenPaywall, onOpenPurchases = onOpenPurchases)
                 }
             }
             BillingStrip(onOpenPaywall)

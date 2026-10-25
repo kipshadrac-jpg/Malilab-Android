@@ -21,6 +21,12 @@ data class BillingStatus(
     val sandbox: Boolean = false,
 )
 
+class Purchase(val id: Int, val status: String, val product: String, val title: String, val amount: Int, val receipt: String, val at: String, val sandbox: Boolean)
+
+class GrantedModule(val title: String, val at: String)
+
+class PurchaseHistory(val purchases: List<Purchase>, val granted: List<GrantedModule>, val allModulesAt: String?)
+
 class PaymentInfo(val id: Int, val status: String, val receipt: String, val detail: String, val message: String)
 
 /** Modules are bought one at a time or all at once, and kept for good. Nothing here renews. */
@@ -86,6 +92,22 @@ object Billing {
             status = parse(s)
         }
         return payment(o.getJSONObject("payment"))
+    }
+
+    /** Everything this learner has paid for, newest first, plus modules given by MaliLab staff. */
+    suspend fun purchases(): PurchaseHistory {
+        val o = Auth.api("GET", "/api/v1/billing/payments/")
+        val rows = o.optJSONArray("payments")
+        val gr = o.optJSONArray("granted")
+        val list = (0 until (rows?.length() ?: 0)).map {
+            val p = rows!!.getJSONObject(it)
+            Purchase(
+                p.optInt("id"), p.optString("status"), p.optString("product"), p.optString("module_title").ifBlank { p.optString("module") },
+                p.optInt("amount"), p.optString("receipt"), (if (p.isNull("paid_at")) p.optString("created_at") else p.optString("paid_at")), p.optBoolean("sandbox"),
+            )
+        }
+        val given = (0 until (gr?.length() ?: 0)).map { val g = gr!!.getJSONObject(it); GrantedModule(g.optString("title"), g.optString("at")) }
+        return PurchaseHistory(list, given, if (o.isNull("all_modules_at")) null else o.optString("all_modules_at"))
     }
 
     private fun payment(o: JSONObject) = PaymentInfo(
