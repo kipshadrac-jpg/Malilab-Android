@@ -14,7 +14,7 @@ android {
         targetSdk = 35
         // Every GitHub build gets a higher number, so each new APK installs over the last one.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.17.0"
+        versionName = "0.18.0"
     }
 
     signingConfigs {
@@ -29,12 +29,18 @@ android {
     }
 
     buildTypes {
+        // Debug builds (the ones GitHub makes now) show Google's TEST ads, so nobody taps real ads while testing.
+        // Release builds use MaliLab's real AdMob ids.
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+            buildConfigField("String", "BANNER_UNIT", "\"ca-app-pub-3940256099942544/9214589741\"")
         }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-4769800577067926~2189875520"
+            buildConfigField("String", "BANNER_UNIT", "\"ca-app-pub-4769800577067926/9378722529\"")
         }
     }
 
@@ -47,6 +53,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -66,4 +73,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("io.coil-kt:coil-svg:2.7.0")
+    implementation("com.google.android.gms:play-services-ads:23.5.0")
 }

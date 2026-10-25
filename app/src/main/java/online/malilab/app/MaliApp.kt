@@ -2,6 +2,7 @@ package online.malilab.app
 
 import android.app.Application
 import coil.ImageLoader
+import com.google.android.gms.ads.MobileAds
 import coil.ImageLoaderFactory
 import coil.decode.SvgDecoder
 import online.malilab.app.data.Auth
@@ -20,6 +21,8 @@ class MaliApp : Application(), ImageLoaderFactory {
         PracticeStore.init(this)
         Billing.init(this)
         Mali.init(this)
+        // Starts the ad network off the main thread, as Google asks.
+        Thread { MobileAds.initialize(this) }.start()
     }
 
     // The site draws playbook covers as SVG pictures, so images are loaded with an SVG decoder as well.

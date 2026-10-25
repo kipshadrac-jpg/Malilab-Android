@@ -3,12 +3,16 @@ package online.malilab.app.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,16 +32,19 @@ fun BillingStrip(onOpenPaywall: () -> Unit) {
     val st = Billing.status
     if (!st.paywall) return
     if (st.ads) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 50.dp).background(Mali.Sand.copy(alpha = 0.55f)).clickable(onClick = onOpenPaywall).padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Text("Ad", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Mali.InkSoft, modifier = Modifier.padding(end = 10.dp))
-            Text(
-                "Modules you unlock are free of ads, for good.",
-                fontSize = 13.sp, color = Mali.Ink, textAlign = TextAlign.Center,
-            )
+        var adFailed by remember { mutableStateOf(false) }
+        Column(Modifier.fillMaxWidth().background(Mali.Surface)) {
+            if (!adFailed) AdBanner(onFailed = { adFailed = true })
+            Row(
+                Modifier.fillMaxWidth().background(Mali.Sand.copy(alpha = 0.55f)).clickable(onClick = onOpenPaywall).padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    "Modules you unlock are free of ads, for good. Tap to unlock.",
+                    fontSize = 13.sp, color = Mali.Ink, textAlign = TextAlign.Center,
+                )
+            }
         }
     } else if (st.trialActive) {
         val days = (st.trialSeconds + 86399) / 86400
