@@ -14,7 +14,7 @@ android {
         targetSdk = 35
         // Every GitHub build gets a higher number, so each new APK installs over the last one.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.14.0"
+        versionName = "0.15.0"
     }
 
     signingConfigs {

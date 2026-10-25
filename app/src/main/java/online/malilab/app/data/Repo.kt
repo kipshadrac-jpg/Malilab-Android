@@ -116,13 +116,15 @@ object Repo {
     suspend fun lesson(slug: String): Loaded<LessonDetail> {
         val key = "lesson_$slug"
         try {
-            val body = get("/api/v1/lessons/$slug/")
+            val body = Auth.api("GET", "/api/v1/lessons/$slug/").toString()
             val detail = parseLesson(body)
             prefs.edit().putString(key, body).apply()
             return Loaded(detail, false)
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
+        } catch (e: ApiError) {
+            // Only a missing connection falls back to the saved copy. A "payment required" answer must reach the screen.
+            if (e.status != 0) throw e
             val saved = prefs.getString(key, null) ?: throw e
             return Loaded(parseLesson(saved), true)
         }

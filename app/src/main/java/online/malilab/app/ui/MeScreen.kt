@@ -29,11 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import online.malilab.app.data.Auth
+import online.malilab.app.data.Billing
 import online.malilab.app.data.NoteStore
 import online.malilab.app.ui.theme.Mali
 
 @Composable
-fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}) {
+fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     StatusBarIcons(darkIcons = false, active = active)
@@ -43,9 +44,10 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             InfoCard("SIGNED IN AS", Auth.email.ifBlank { "Your account" }, Mali.Teal)
             InfoCard(
-                "SUBSCRIPTION",
-                "Free for now. Paid plans with extra features will be offered here later.",
+                "MODULES",
+                billingSummary(),
                 Mali.Indigo,
+                onClick = if (Billing.status.paywall && !Billing.status.allModules) onOpenPaywall else null,
             )
             InfoCard(
                 "MY PLAN",
@@ -74,6 +76,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}) {
                             busy = true
                             Auth.signOut()
                             NoteStore.reset()
+                            Billing.reset()
                             busy = false
                         }
                     }

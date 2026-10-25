@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import online.malilab.app.data.ApiError
+import online.malilab.app.data.Billing
 import online.malilab.app.data.Block
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PracticeStore
@@ -68,10 +71,15 @@ fun HomeShell() {
     var historyOpen by rememberSaveable { mutableStateOf(false) }
     var calcSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var calcTitle by rememberSaveable { mutableStateOf("") }
+    var paywallOpen by rememberSaveable { mutableStateOf(false) }
+    var paywallSlug by rememberSaveable { mutableStateOf<String?>(null) }
+    var paywallTitle by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) { Billing.load() }
+
     val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null &&
-        practiceSlug == null && !historyOpen && calcSlug == null
+        practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen
 
     // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
     fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
@@ -117,6 +125,7 @@ fun HomeShell() {
             onOpenModule = { openModule = it },
             onOpenNote = { studioUid = it },
             onOpenPractice = { historyOpen = true },
+            onOpenPaywall = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
         )
         val pb = openPlaybook
         if (pb != null) {
@@ -132,10 +141,11 @@ fun HomeShell() {
         if (mod != null) {
             ModuleDetailScreen(
                 slug = mod,
-                active = lessonSlug == null && studioUid == null && practiceSlug == null,
+                active = lessonSlug == null && studioUid == null && practiceSlug == null && !paywallOpen,
                 onBack = { openModule = null },
                 onOpenLesson = { lessonModule = mod; lessonSlug = it },
                 onOpenPractice = { practiceView = 0; practiceSlug = it },
+                onUnlock = { title -> paywallSlug = mod; paywallTitle = title; paywallOpen = true },
             )
         }
         val ls = lessonSlug
@@ -163,7 +173,7 @@ fun HomeShell() {
                 PracticeScreen(
                     slug = ps,
                     viewAttempt = practiceView,
-                    active = calcSlug == null && studioUid == null,
+                    active = calcSlug == null && studioUid == null && !paywallOpen,
                     onBack = { practiceSlug = null; practiceView = 0 },
                     onOpenCalculator = { model, slug, title ->
                         LabMemory.model = if (model in setOf("compound", "tbill", "tbond", "mmf", "sacco", "loan", "compare")) model else "compound"
@@ -177,6 +187,16 @@ fun HomeShell() {
                             studioUid = uid
                         }
                     },
+                )
+            }
+        }
+        if (paywallOpen) {
+            androidx.compose.runtime.key(paywallSlug) {
+                PaywallScreen(
+                    moduleSlug = paywallSlug,
+                    moduleTitle = paywallTitle,
+                    active = studioUid == null,
+                    onClose = { paywallOpen = false; paywallSlug = null },
                 )
             }
         }
@@ -210,6 +230,7 @@ private fun MainScaffold(
     onOpenModule: (String) -> Unit,
     onOpenNote: (String) -> Unit,
     onOpenPractice: () -> Unit,
+    onOpenPaywall: () -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -233,13 +254,16 @@ private fun MainScaffold(
             }
         },
     ) { inner ->
-        Box(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
-            when (selected) {
-                0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
-                1 -> LearnScreen(active = active, onOpen = onOpenModule)
-                2 -> PlanScreen(active = active, onOpen = onOpenNote)
-                else -> MeScreen(active = active, onOpenPractice = onOpenPractice)
+        Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                when (selected) {
+                    0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
+                    1 -> LearnScreen(active = active, onOpen = onOpenModule)
+                    2 -> PlanScreen(active = active, onOpen = onOpenNote)
+                    else -> MeScreen(active = active, onOpenPractice = onOpenPractice, onOpenPaywall = onOpenPaywall)
+                }
             }
+            BillingStrip(onOpenPaywall)
         }
     }
 }

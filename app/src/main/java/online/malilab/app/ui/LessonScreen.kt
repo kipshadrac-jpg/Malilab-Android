@@ -52,7 +52,7 @@ import online.malilab.app.ui.theme.Mali
 private sealed interface LessonState {
     data object Loading : LessonState
     data class Ready(val lesson: LessonDetail, val offline: Boolean) : LessonState
-    data object Failed : LessonState
+    data class Failed(val message: String = "Check your connection and try again.", val locked: Boolean = false) : LessonState
 }
 
 /** Reads one lesson, ends with "Mark lesson complete", and celebrates when the last lesson of a module is done. */
@@ -95,8 +95,10 @@ fun LessonScreen(
         state = try {
             val loaded = Repo.lesson(lessonSlug)
             LessonState.Ready(loaded.value, loaded.offline)
+        } catch (e: ApiError) {
+            if (e.status == 402) LessonState.Failed(e.message ?: "Unlock this module to read its lessons.", true) else LessonState.Failed()
         } catch (e: Exception) {
-            LessonState.Failed
+            LessonState.Failed()
         }
     }
 
@@ -113,10 +115,10 @@ fun LessonScreen(
             is LessonState.Failed -> Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 Box(Modifier.padding(12.dp)) { BackCircle(onBack) }
                 MessageBlock(
-                    title = "Could not open this lesson",
-                    body = "Check your connection and try again.",
-                    action = "Try again",
-                    onAction = { attempt++ },
+                    title = if (s.locked) "This lesson is locked" else "Could not open this lesson",
+                    body = s.message,
+                    action = if (s.locked) "Go back" else "Try again",
+                    onAction = { if (s.locked) onBack() else attempt++ },
                 )
             }
             is LessonState.Ready -> {

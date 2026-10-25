@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import online.malilab.app.data.Auth
+import online.malilab.app.data.Billing
 import online.malilab.app.data.ModuleDetail
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
@@ -46,10 +47,11 @@ private sealed interface ModState {
 }
 
 @Composable
-fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenLesson: (String) -> Unit, onOpenPractice: (String) -> Unit = {}) {
+fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenLesson: (String) -> Unit, onOpenPractice: (String) -> Unit = {}, onUnlock: (String) -> Unit = {}) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(slug) { mutableStateOf<ModState>(ModState.Loading) }
     val accent = Mali.accentFor(slug)
+    val owned = Billing.owns(slug)
     val done = Auth.progress.lessons
     val listState = rememberLazyListState()
     val progress = firstItemProgress(listState, 0.85f, 1f)
@@ -104,6 +106,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Chip("Module", accent)
+                                if (Billing.status.paywall) Chip(if (owned) "Yours" else "KES ${Billing.status.priceModule}", if (owned) Mali.Green else Mali.Amber)
                                 Chip(if (m.lessonCount == 1) "1 lesson" else "${m.lessonCount} lessons", Mali.InkSoft)
                                 if (s.detail.practice.isNotEmpty()) {
                                     Chip(if (s.detail.practice.size == 1) "1 practice" else "${s.detail.practice.size} practice", Mali.InkSoft)
@@ -158,6 +161,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Spacer(Modifier.height(18.dp))
                             Text(
                                 when {
+                                    !owned -> "Unlock this module · KES ${Billing.status.priceModule}"
                                     finished -> "Review lessons"
                                     doneCount > 0 -> "Continue"
                                     else -> "Start Lesson"
@@ -170,7 +174,9 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(50))
                                     .background(accent)
-                                    .clickable(enabled = nextLesson != null) { nextLesson?.let { onOpenLesson(it.slug) } }
+                                    .clickable(enabled = nextLesson != null || !owned) {
+                                        if (!owned) onUnlock(m.title) else nextLesson?.let { onOpenLesson(it.slug) }
+                                    }
                                     .padding(vertical = 15.dp),
                             )
                             Spacer(Modifier.height(24.dp))
@@ -189,7 +195,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clickable { onOpenLesson(l.slug) }
+                                .clickable { if (owned) onOpenLesson(l.slug) else onUnlock(m.title) }
                                 .padding(horizontal = 20.dp, vertical = 14.dp),
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
@@ -232,7 +238,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable { onOpenPractice(p.slug) }
+                                    .clickable { if (owned) onOpenPractice(p.slug) else onUnlock(m.title) }
                                     .padding(horizontal = 20.dp, vertical = 14.dp),
                                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                             ) {
