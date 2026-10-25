@@ -8,6 +8,7 @@ import coil.decode.SvgDecoder
 import online.malilab.app.data.Auth
 import online.malilab.app.data.Billing
 import online.malilab.app.data.NoteStore
+import online.malilab.app.data.PortfolioStore
 import online.malilab.app.data.PracticeStore
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
@@ -19,6 +20,7 @@ class MaliApp : Application(), ImageLoaderFactory {
         Auth.init(this)
         NoteStore.init(this)
         PracticeStore.init(this)
+        PortfolioStore.init(this)
         Billing.init(this)
         Mali.init(this)
         // Starts the ad network off the main thread, as Google asks.

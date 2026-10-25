@@ -83,6 +83,13 @@ object Mali {
     val Purple get() = pick(Color(0xFF7A3DB0), Color(0xFFBD8AEB))
     val Green get() = pick(Color(0xFF1F7A4D), Color(0xFF4CC08A))
     val Night = Color(0xFF16202B)
+
+    /** The blue-green of the portfolio pages: a teal that leans toward the sea. */
+    val OceanTop get() = pick(Color(0xFF0A7C8C), Color(0xFF0D5560))
+    val OceanBottom get() = pick(Color(0xFF2AB8A6), Color(0xFF1B867D))
+    val OceanTint get() = pick(Color(0xFFDDF3F2), Color(0xFF173238))
+    /** A bright brown for charts and the odd highlight. */
+    val Brown get() = pick(Color(0xFFB5651D), Color(0xFFE59A55))
     val accents get() = listOf(Teal, Indigo, Pink, Amber, Purple, Green)
 
     /** The same item always gets the same accent colour, on every screen. */

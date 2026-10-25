@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import online.malilab.app.data.Auth
 import online.malilab.app.data.Billing
 import online.malilab.app.data.NoteStore
+import online.malilab.app.data.PortfolioStore
 import online.malilab.app.ui.theme.Mali
 
 @Composable
@@ -98,6 +99,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                             busy = true
                             Auth.signOut()
                             NoteStore.reset()
+                            PortfolioStore.reset()
                             Billing.reset()
                             busy = false
                         }

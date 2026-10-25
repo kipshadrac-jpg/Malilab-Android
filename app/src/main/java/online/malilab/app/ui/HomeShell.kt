@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +25,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,16 +48,18 @@ import online.malilab.app.data.Billing
 import online.malilab.app.data.Block
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PracticeStore
+import online.malilab.app.data.PortfolioStore
 import online.malilab.app.data.Repo
 import online.malilab.app.ui.theme.Mali
 
 private data class Tab(val title: String, val icon: ImageVector)
 
+// Four tabs. "Me" is the round profile icon at the top-left of each page, not a tab.
 private val tabs = listOf(
     Tab("Home", Icons.Filled.Home),
+    Tab("Discover", Icons.Filled.Search),
     Tab("Learn", Icons.Filled.Info),
     Tab("Plan", Icons.Filled.Edit),
-    Tab("Me", Icons.Filled.Person),
 )
 
 @Composable
@@ -72,6 +76,10 @@ fun HomeShell() {
     var calcSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var calcTitle by rememberSaveable { mutableStateOf("") }
     var paywallOpen by rememberSaveable { mutableStateOf(false) }
+    var profileOpen by rememberSaveable { mutableStateOf(false) }
+    var portfolioUid by rememberSaveable { mutableStateOf<String?>(null) }
+    var editorOpen by rememberSaveable { mutableStateOf(false) }
+    var editorUid by rememberSaveable { mutableStateOf<String?>(null) }
     var purchasesOpen by rememberSaveable { mutableStateOf(false) }
     var paywallSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var paywallTitle by rememberSaveable { mutableStateOf("") }
@@ -80,7 +88,8 @@ fun HomeShell() {
     LaunchedEffect(Unit) { Billing.load() }
 
     val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null &&
-        practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen
+        practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen &&
+        !profileOpen && portfolioUid == null && !editorOpen
 
     // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
     fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
@@ -117,6 +126,7 @@ fun HomeShell() {
         }
     }
 
+    CompositionLocalProvider(LocalOpenProfile provides { profileOpen = true }) {
     Box(Modifier.fillMaxSize()) {
         MainScaffold(
             selected = selected,
@@ -128,7 +138,45 @@ fun HomeShell() {
             onOpenPractice = { historyOpen = true },
             onOpenPaywall = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
             onOpenPurchases = { purchasesOpen = true },
+            onOpenPlan = { portfolioUid = it },
+            onAddPlan = { editorUid = null; editorOpen = true },
         )
+        val pid = portfolioUid
+        if (pid != null) {
+            PlanDetailScreen(
+                uid = pid,
+                active = !editorOpen && openPlaybook == null,
+                onBack = { portfolioUid = null },
+                onEdit = { editorUid = it; editorOpen = true },
+            )
+        }
+        if (profileOpen) {
+            androidx.activity.compose.BackHandler(enabled = historyOpen.not() && !paywallOpen && !purchasesOpen && studioUid == null) { profileOpen = false }
+            Box(Modifier.fillMaxSize().background(Mali.Surface)) {
+                CompositionLocalProvider(LocalHeaderBack provides { profileOpen = false }) {
+                    MeScreen(
+                        active = !historyOpen && !paywallOpen && !purchasesOpen && studioUid == null,
+                        onOpenPractice = { historyOpen = true },
+                        onOpenPaywall = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
+                        onOpenPurchases = { purchasesOpen = true },
+                    )
+                }
+            }
+        }
+        if (editorOpen) {
+            androidx.compose.runtime.key(editorUid) {
+                PlanEditorScreen(
+                    uid = editorUid,
+                    onClose = { editorOpen = false; editorUid = null },
+                    onSaved = { saved ->
+                        editorOpen = false
+                        editorUid = null
+                        portfolioUid = saved
+                        scope.launch { PortfolioStore.refresh() }
+                    },
+                )
+            }
+        }
         val pb = openPlaybook
         if (pb != null) {
             PlaybookDetailScreen(
@@ -228,6 +276,7 @@ fun HomeShell() {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -241,6 +290,8 @@ private fun MainScaffold(
     onOpenPractice: () -> Unit,
     onOpenPaywall: () -> Unit,
     onOpenPurchases: () -> Unit,
+    onOpenPlan: (String) -> Unit,
+    onAddPlan: () -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -267,10 +318,10 @@ private fun MainScaffold(
         Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (selected) {
-                    0 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
-                    1 -> LearnScreen(active = active, onOpen = onOpenModule)
-                    2 -> PlanScreen(active = active, onOpen = onOpenNote)
-                    else -> MeScreen(active = active, onOpenPractice = onOpenPractice, onOpenPaywall = onOpenPaywall, onOpenPurchases = onOpenPurchases)
+                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook)
+                    1 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
+                    2 -> LearnScreen(active = active, onOpen = onOpenModule)
+                    else -> PlanScreen(active = active, onOpen = onOpenNote)
                 }
             }
             BillingStrip(onOpenPaywall)
