@@ -515,6 +515,12 @@ object PortfolioStore {
         return cache[uid]
     }
 
+    /** Every plan on the phone, for the reminder check that runs in the background. */
+    fun all(): List<Plan> {
+        ensureLoaded()
+        return plans
+    }
+
     /** Saves a new or changed plan on the phone straight away. The account is updated on the next [refresh]. */
     fun save(plan: Plan): String {
         ensureLoaded()

@@ -1,6 +1,12 @@
 package online.malilab.app.ui
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,6 +63,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -74,6 +82,7 @@ import online.malilab.app.data.PlaybookSummary
 import online.malilab.app.data.PortfolioEngine
 import online.malilab.app.data.PortfolioStore
 import online.malilab.app.data.RateChange
+import online.malilab.app.data.Reminders
 import online.malilab.app.data.Repo
 import online.malilab.app.data.SeriesPoint
 import online.malilab.app.data.Standing
@@ -258,6 +267,22 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
     LaunchedEffect(active) { if (active) PortfolioStore.refresh() }
     val plans = PortfolioStore.plans
     val totals = remember(plans) { totalsOf(plans) }
+    val context = LocalContext.current
+    val askLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { Reminders.runNow(context) }
+    LaunchedEffect(plans) {
+        if (plans.isNotEmpty()) {
+            val asked = context.getSharedPreferences("malilab_reminders", Context.MODE_PRIVATE)
+            if (Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+                !asked.getBoolean("asked", false)
+            ) {
+                asked.edit().putBoolean("asked", true).apply()
+                askLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                Reminders.runNow(context)
+            }
+        }
+    }
     var featured by remember { mutableStateOf(Repo.peekList().orEmpty()) }
     LaunchedEffect(Unit) {
         try {
@@ -553,6 +578,9 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
     var timing by remember { mutableStateOf(existing?.timing ?: "end") }
     var payout by remember { mutableStateOf(existing?.payout ?: "reinvest") }
     var tax by remember { mutableStateOf(existing?.taxPct?.takeIf { it > 0 }?.let { plainNum(it) }.orEmpty()) }
+    var remind by remember { mutableStateOf(existing?.reminderOn ?: true) }
+    var remindHour by remember { mutableIntStateOf(existing?.reminderHour ?: 8) }
+    var remindBefore by remember { mutableIntStateOf(existing?.reminderDaysBefore ?: 0) }
     var more by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf("") }
     var built by remember { mutableStateOf<Plan?>(null) }
@@ -595,6 +623,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
             category = category, name = name.trim().take(120), provider = provider.trim().take(120), startDate = day.iso(),
             initial = ini, contribution = con, interval = interval, ratePct = r, rateBasis = basis, tenureMonths = months,
             payout = payout, taxPct = t, timing = timing,
+            reminderOn = remind, reminderHour = remindHour, reminderDaysBefore = remindBefore,
         )
     }
 
@@ -670,6 +699,27 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                     if (interval != "once") PfField("Amount each time (KES)", contribution, { contribution = it }, number = true)
                     PfField(vehicle?.rateLabel ?: "Rate (% a year)", rate, { rate = it }, number = true, hint = "The rate you secured or expect. ${vehicle?.rateKindLabel.orEmpty()}. It is never promised.")
                     PfField("For how many years?", years, { years = it }, number = true, hint = "Use a decimal for part of a year, like 2.5.")
+                    if (interval != "once") {
+                        PfLabel("PAYMENT REMINDER")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ActionChip("Remind me", selected = remind, color = accent) { remind = true }
+                            ActionChip("No reminder", selected = !remind, color = accent) { remind = false }
+                        }
+                        if (remind) {
+                            Text("What time?", fontSize = 13.sp, color = Mali.InkSoft)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf(6 to "6 am", 8 to "8 am", 12 to "12 noon", 17 to "5 pm", 20 to "8 pm").forEach { (h, word) ->
+                                    ActionChip(word, selected = remindHour == h, color = accent) { remindHour = h }
+                                }
+                            }
+                            Text("How early?", fontSize = 13.sp, color = Mali.InkSoft)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf(0 to "On the day", 1 to "1 day before", 3 to "3 days before").forEach { (d, word) ->
+                                    ActionChip(word, selected = remindBefore == d, color = accent) { remindBefore = d }
+                                }
+                            }
+                        }
+                    }
                     ActionChip(if (more) "Hide more options" else "More options", color = Mali.TealDeep) { more = !more }
                     if (more) {
                         PfLabel("HOW THE RATE IS QUOTED")
@@ -797,6 +847,7 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
                 PfFact("Started", Day.parse(plan.startDate)?.pretty() ?: plan.startDate)
                 PfFact("Runs for", PortfolioEngine.label(plan.tenureMonths) + if (st.matured) " (finished)" else "")
                 if (st.nextDue != null && !st.matured) PfFact("Next payment", st.nextDue.pretty())
+                if (plan.contribution > 0 && plan.interval != "once") PfFact("Reminder", if (plan.reminderOn) (if (plan.reminderDaysBefore == 0) "On the day" else "${plan.reminderDaysBefore} day(s) before") + ", " + (if (plan.reminderHour < 12) "${plan.reminderHour} am" else if (plan.reminderHour == 12) "12 noon" else "${plan.reminderHour - 12} pm") else "Off")
                 if (plan.taxPct > 0) PfFact("Tax taken off", "${plainNum(plan.taxPct)}% of interest")
             }
 
