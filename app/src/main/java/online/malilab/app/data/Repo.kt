@@ -21,6 +21,7 @@ object Repo {
     private lateinit var prefs: SharedPreferences
     private var memList: List<PlaybookSummary>? = null
     private var memModules: List<ModuleSummary>? = null
+    private var memArticles: List<ArticleSummary>? = null
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("malilab_cache", Context.MODE_PRIVATE)
@@ -130,6 +131,49 @@ object Repo {
         }
     }
 
+    // ------------------------------------------------------------ articles
+    fun peekArticles(): List<ArticleSummary>? {
+        memArticles?.let { return it }
+        val saved = prefs.getString("articles", null) ?: return null
+        val parsed = try {
+            parseArticles(saved)
+        } catch (e: Exception) {
+            null
+        }
+        memArticles = parsed
+        return parsed
+    }
+
+    suspend fun articles(): Loaded<List<ArticleSummary>> {
+        try {
+            val body = get("/api/v1/articles/")
+            val list = parseArticles(body)
+            prefs.edit().putString("articles", body).apply()
+            memArticles = list
+            return Loaded(list, false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val cached = peekArticles() ?: throw e
+            return Loaded(cached, true)
+        }
+    }
+
+    suspend fun article(slug: String): Loaded<ArticleDetail> {
+        val key = "article_$slug"
+        try {
+            val body = get("/api/v1/articles/$slug/")
+            val detail = parseArticle(body)
+            prefs.edit().putString(key, body).apply()
+            return Loaded(detail, false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val saved = prefs.getString(key, null) ?: throw e
+            return Loaded(parseArticle(saved), true)
+        }
+    }
+
     // ------------------------------------------------------------ notes (kept on the phone for now)
     fun notes(slug: String): String = prefs.getString("notes_$slug", "") ?: ""
 
@@ -173,7 +217,58 @@ object Repo {
                 rows = if (rowsArr == null) emptyList() else (0 until rowsArr.length()).map { r -> strings(rowsArr.optJSONArray(r)) },
             )
         }
-        return LessonDetail(o.getString("slug"), o.optString("title"), o.optString("summary"), blocks)
+        val cover = if (o.isNull("cover_url")) null else o.optString("cover_url").ifBlank { null }
+        return LessonDetail(o.getString("slug"), o.optString("title"), o.optString("summary"), blocks, cover, o.optString("cover_alt"))
+    }
+
+    private fun parseBlocks(arr: JSONArray?): List<LessonBlock> {
+        if (arr == null) return emptyList()
+        return (0 until arr.length()).map { i ->
+            val b = arr.getJSONObject(i)
+            val p = b.optJSONObject("payload") ?: JSONObject()
+            val rowsArr = p.optJSONArray("rows")
+            LessonBlock(
+                type = b.optString("type"),
+                text = p.optString("text"),
+                level = p.optInt("level", 2),
+                tone = p.optString("tone", "note"),
+                items = strings(p.optJSONArray("items")),
+                ordered = p.optBoolean("ordered"),
+                header = strings(p.optJSONArray("header")),
+                rows = if (rowsArr == null) emptyList() else (0 until rowsArr.length()).map { r -> strings(rowsArr.optJSONArray(r)) },
+            )
+        }
+    }
+
+    private fun parseArticleSummary(o: JSONObject): ArticleSummary {
+        val cover = if (o.isNull("cover_url")) null else o.optString("cover_url").ifBlank { null }
+        return ArticleSummary(
+            slug = o.getString("slug"),
+            title = o.optString("title"),
+            summary = o.optString("summary"),
+            category = o.optString("category"),
+            categoryLabel = o.optString("category_label"),
+            featured = o.optBoolean("featured"),
+            coverUrl = cover,
+            coverAlt = o.optString("cover_alt"),
+            hasPlaybook = o.optBoolean("has_playbook"),
+        )
+    }
+
+    private fun parseArticles(body: String): List<ArticleSummary> {
+        val arr = JSONObject(body).optJSONArray("articles") ?: JSONArray()
+        return (0 until arr.length()).map { parseArticleSummary(arr.getJSONObject(it)) }
+    }
+
+    private fun parseArticle(body: String): ArticleDetail {
+        val o = JSONObject(body)
+        val pb = o.optJSONObject("playbook")
+        return ArticleDetail(
+            summary = parseArticleSummary(o),
+            blocks = parseBlocks(o.optJSONArray("blocks")),
+            playbookSlug = pb?.optString("slug")?.ifBlank { null },
+            playbookTitle = pb?.optString("title")?.ifBlank { null },
+        )
     }
 
     private fun parseModuleSummary(o: JSONObject) = ModuleSummary(

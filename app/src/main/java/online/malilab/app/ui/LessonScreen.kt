@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -137,6 +138,12 @@ fun LessonScreen(
                             if (where.isNotBlank()) Text(where, fontSize = 13.sp, color = Mali.InkSoft)
                             Spacer(Modifier.height(10.dp))
                             Text(s.lesson.title, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+                            if (s.lesson.coverUrl != null) {
+                                Spacer(Modifier.height(12.dp))
+                                Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f).clip(RoundedCornerShape(14.dp))) {
+                                    CoverImage(s.lesson.coverUrl, s.lesson.coverAlt, accent, Modifier.fillMaxSize())
+                                }
+                            }
                             if (s.lesson.summary.isNotBlank()) {
                                 Spacer(Modifier.height(8.dp))
                                 Text(s.lesson.summary, fontSize = 16.sp, lineHeight = 24.sp, color = Mali.InkSoft)
@@ -333,7 +340,7 @@ private fun Congratulations(moduleTitle: String, lessonCount: Int, accent: Color
 
 // ---------------------------------------------------------------- lesson blocks
 @Composable
-private fun BlockView(b: LessonBlock, headingColor: Color) {
+internal fun BlockView(b: LessonBlock, headingColor: Color) {
     when (b.type) {
         "heading" -> Text(
             inlineText(b.text),

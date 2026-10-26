@@ -262,7 +262,7 @@ private fun percent(v: Double): String = String.format(java.util.Locale.US, "%.1
 
 // ============================================================================================ the Home tab
 @Composable
-fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenPlaybook: (String) -> Unit) {
+fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenPlaybook: (String) -> Unit, onOpenArticle: (String) -> Unit) {
     StatusBarIcons(darkIcons = false, active = active)
     LaunchedEffect(active) { if (active) PortfolioStore.refresh() }
     val plans = PortfolioStore.plans
@@ -291,6 +291,14 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
             // The saved copy (if any) stays on screen.
         }
     }
+    var articles by remember { mutableStateOf(Repo.peekArticles().orEmpty()) }
+    LaunchedEffect(Unit) {
+        try {
+            articles = Repo.articles().value
+        } catch (e: Exception) {
+            // The saved copy (if any) stays on screen.
+        }
+    }
 
     Box(Modifier.fillMaxSize().background(Mali.Cream)) {
         LazyColumn(Modifier.fillMaxSize()) {
@@ -314,7 +322,9 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
                     Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) { PfPlanRow(h) { onOpenPlan(h.plan.uid) } }
                 }
             }
-            if (featured.isNotEmpty()) item { PfFeatured(featured, onOpenPlaybook) }
+            val featuredArticles = articles.filter { it.featured }.ifEmpty { articles.take(6) }
+            if (featuredArticles.isNotEmpty()) item { FeaturedArticles(featuredArticles, onOpenArticle) }
+            else if (featured.isNotEmpty()) item { PfFeatured(featured, onOpenPlaybook) }
             item { Spacer(Modifier.height(120.dp)) }
         }
 
@@ -807,6 +817,11 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
     val st = remember(plan) { PortfolioEngine.standing(plan) }
     var dialog by remember { mutableStateOf("") }
     val rateNow = currentRate(plan)
+    val context = LocalContext.current
+    var testNote by remember { mutableStateOf("") }
+    val askTest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        testNote = if (ok && Reminders.sendTest(context, plan)) "Test sent. Look in your notifications." else "Notifications are off for MaliLab. Turn them on in your phone's settings."
+    }
 
     fun change(p: Plan) { PortfolioStore.save(p) }
 
@@ -855,7 +870,17 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
                 if (plan.contribution > 0 && plan.interval != "once") ActionChip("I paid in", color = Mali.Green) { dialog = "pay" }
                 ActionChip("The rate changed", color = Mali.Indigo) { dialog = "rate" }
                 ActionChip("Update its value", color = Mali.Brown) { dialog = "value" }
+                if (plan.contribution > 0 && plan.interval != "once") ActionChip("Send a test reminder", color = Mali.TealDeep) {
+                    if (Reminders.canNotify(context)) {
+                        testNote = if (Reminders.sendTest(context, plan)) "Test sent. Look in your notifications." else "Notifications are off for MaliLab. Turn them on in your phone's settings."
+                    } else if (Build.VERSION.SDK_INT >= 33) {
+                        askTest.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        testNote = "Notifications are off for MaliLab. Turn them on in your phone's settings."
+                    }
+                }
             }
+            if (testNote.isNotEmpty()) Text(testNote, fontSize = 13.sp, lineHeight = 18.sp, color = Mali.InkSoft)
 
             PfLabel("WHAT IT COULD BECOME")
             PfCard { PfGrowth(proj.series, v.color) }

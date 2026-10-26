@@ -102,6 +102,29 @@ object Reminders {
         }
     }
 
+    /** Shows a sample reminder right now so a person can see that notifications reach them. Returns false when they are off. */
+    fun sendTest(context: Context, p: Plan): Boolean {
+        if (!canNotify(context)) return false
+        ensureChannel(context)
+        val open = PendingIntent.getActivity(
+            context, 7001, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val note = NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_notify)
+            .setContentTitle("Test reminder")
+            .setContentText("This is how a payment reminder for " + p.name + " will look.")
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        return try {
+            NotificationManagerCompat.from(context).notify(7001, note)
+            true
+        } catch (e: SecurityException) {
+            false
+        }
+    }
+
     private fun post(context: Context, p: Plan, due: Day, daysLeft: Int) {
         val id = p.uid.hashCode()
         val whenText = when {

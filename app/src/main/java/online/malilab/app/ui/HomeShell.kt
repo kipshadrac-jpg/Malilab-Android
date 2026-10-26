@@ -66,6 +66,7 @@ private val tabs = listOf(
 fun HomeShell() {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     var openPlaybook by rememberSaveable { mutableStateOf<String?>(null) }
+    var openArticle by rememberSaveable { mutableStateOf<String?>(null) }
     var openModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonSlug by rememberSaveable { mutableStateOf<String?>(null) }
@@ -87,7 +88,7 @@ fun HomeShell() {
 
     LaunchedEffect(Unit) { Billing.load() }
 
-    val nothingOpen = openPlaybook == null && openModule == null && lessonSlug == null && studioUid == null &&
+    val nothingOpen = openPlaybook == null && openArticle == null && openModule == null && lessonSlug == null && studioUid == null &&
         practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen &&
         !profileOpen && portfolioUid == null && !editorOpen
 
@@ -133,6 +134,7 @@ fun HomeShell() {
             active = nothingOpen,
             onSelect = { selected = it },
             onOpenPlaybook = { openPlaybook = it },
+            onOpenArticle = { openArticle = it },
             onOpenModule = { openModule = it },
             onOpenNote = { studioUid = it },
             onOpenPractice = { historyOpen = true },
@@ -176,6 +178,15 @@ fun HomeShell() {
                     },
                 )
             }
+        }
+        val art = openArticle
+        if (art != null) {
+            ArticleDetailScreen(
+                slug = art,
+                active = openPlaybook == null && studioUid == null,
+                onBack = { openArticle = null },
+                onOpenPlaybook = { openPlaybook = it },
+            )
         }
         val pb = openPlaybook
         if (pb != null) {
@@ -285,6 +296,7 @@ private fun MainScaffold(
     active: Boolean,
     onSelect: (Int) -> Unit,
     onOpenPlaybook: (String) -> Unit,
+    onOpenArticle: (String) -> Unit,
     onOpenModule: (String) -> Unit,
     onOpenNote: (String) -> Unit,
     onOpenPractice: () -> Unit,
@@ -318,8 +330,8 @@ private fun MainScaffold(
         Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (selected) {
-                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook)
-                    1 -> PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
+                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook, onOpenArticle = onOpenArticle)
+                    1 -> ArticlesScreen(active = active, onOpenArticle = onOpenArticle, onOpenPlaybook = onOpenPlaybook)
                     2 -> LearnScreen(active = active, onOpen = onOpenModule)
                     else -> PlanScreen(active = active, onOpen = onOpenNote)
                 }
