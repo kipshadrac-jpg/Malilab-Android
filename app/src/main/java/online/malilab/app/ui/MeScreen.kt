@@ -109,8 +109,8 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
             Heading("Profile")
             WhiteCard {
                 SettingRow(NavIcons.Book, "Modules and billing", planLabel()) { if (Billing.status.paywall && !Billing.status.allModules) onOpenPaywall() else onOpenPurchases() }
-                SettingRow(NavIcons.Receipt, "My purchases", "M-Pesa payments and receipts", onOpenPurchases)
-                SettingRow(NavIcons.CheckCircle, "My practice", "Your answers and unfinished activities", onOpenPractice)
+                SettingRow(NavIcons.Receipt, "My purchases", "M-Pesa payments and receipts", onClick = onOpenPurchases)
+                SettingRow(NavIcons.CheckCircle, "My practice", "Your answers and unfinished activities", onClick = onOpenPractice)
             }
 
             Heading("Settings")
