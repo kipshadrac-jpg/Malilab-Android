@@ -1,6 +1,17 @@
 package online.malilab.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -56,9 +67,9 @@ private data class Tab(val title: String, val icon: ImageVector)
 
 // Four tabs. "Me" is the round profile icon at the top-left of each page, not a tab.
 private val tabs = listOf(
-    Tab("Home", Icons.Filled.Home),
-    Tab("Discover", Icons.Filled.Search),
-    Tab("Learn", Icons.Filled.Info),
+    Tab("Portfolio", NavIcons.Wallet),
+    Tab("Discover", NavIcons.Compass),
+    Tab("Learn", NavIcons.Book),
     Tab("Plan", Icons.Filled.Edit),
 )
 
@@ -308,21 +319,31 @@ private fun MainScaffold(
     Scaffold(
         containerColor = Mali.Cream,
         bottomBar = {
-            NavigationBar(containerColor = Mali.Surface, tonalElevation = 0.dp) {
-                tabs.forEachIndexed { i, tab ->
-                    NavigationBarItem(
-                        selected = selected == i,
-                        onClick = { onSelect(i) },
-                        icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.title, fontSize = 12.sp) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Mali.TealDeep,
-                            selectedTextColor = Mali.TealDeep,
-                            indicatorColor = Mali.TealTint,
-                            unselectedIconColor = Mali.InkSoft,
-                            unselectedTextColor = Mali.InkSoft,
-                        ),
-                    )
+            // Slim bar that sits right on the bottom edge: small labels, no spare space under the icons.
+            Column(Modifier.fillMaxWidth().background(Mali.Surface)) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Mali.Sand.copy(alpha = 0.7f)))
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(top = 6.dp, bottom = 4.dp)) {
+                    tabs.forEachIndexed { i, tab ->
+                        val on = selected == i
+                        val color = if (on) Mali.TealDeep else Mali.InkSoft
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    role = Role.Tab,
+                                ) { onSelect(i) }
+                                .semantics { this.selected = on; contentDescription = tab.title },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(
+                                Modifier.width(52.dp).height(26.dp).clip(RoundedCornerShape(13.dp)).background(if (on) Mali.TealTint else Color.Transparent),
+                                contentAlignment = Alignment.Center,
+                            ) { Icon(tab.icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp)) }
+                            Text(tab.title, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium, color = color, maxLines = 1)
+                        }
+                    }
                 }
             }
         },

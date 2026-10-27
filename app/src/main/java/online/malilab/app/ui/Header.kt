@@ -46,7 +46,7 @@ fun ScreenHeader(title: String, subtitle: String) {
             val back = LocalHeaderBack.current
             val profile = LocalOpenProfile.current
             when {
-                back != null -> Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) { BackCircle(back) }
+                back != null -> Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) { BackCircle(back, tint = Color.White) }
                 profile != null -> ProfileButton(profile)
                 else -> Box(
                     Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Mali.Surface),

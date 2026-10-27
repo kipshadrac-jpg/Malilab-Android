@@ -123,7 +123,8 @@ fun LessonScreen(
                 )
             }
             is LessonState.Ready -> {
-                LazyColumn(Modifier.fillMaxSize()) {
+                val readState = androidx.compose.foundation.lazy.rememberLazyListState()
+                LazyColumn(Modifier.fillMaxSize(), state = readState) {
                     item {
                         Column(
                             Modifier
@@ -186,7 +187,7 @@ fun LessonScreen(
                     }
                     item { Spacer(Modifier.height(120.dp)) }
                 }
-                BackFab(onBack)
+                BackFab(onBack, readState)
                 PlanFab(
                     onClick = { onPlan(s.lesson.title) },
                     modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(18.dp),

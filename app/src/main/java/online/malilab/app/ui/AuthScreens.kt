@@ -144,7 +144,7 @@ private fun FormPage(title: String, subtitle: String, onBack: () -> Unit, conten
                 .navigationBarsPadding()
                 .imePadding(),
         ) {
-            Box(Modifier.padding(start = 12.dp, top = 8.dp)) { BackCircle(onBack) }
+            Box(Modifier.padding(start = 12.dp, top = 8.dp)) { BackCircle(onBack, tint = Color.White) }
             Column(Modifier.padding(horizontal = 24.dp, vertical = 18.dp)) {
                 Text(title, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 Spacer(Modifier.height(6.dp))

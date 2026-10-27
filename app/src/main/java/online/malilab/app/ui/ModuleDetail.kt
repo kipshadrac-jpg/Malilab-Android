@@ -277,7 +277,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                     }
                     item { Spacer(Modifier.height(32.dp)) }
                 }
-                BackFab(onBack)
+                BackFab(onBack, listState)
             }
         }
     }

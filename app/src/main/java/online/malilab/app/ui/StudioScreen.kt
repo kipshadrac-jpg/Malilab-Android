@@ -381,7 +381,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BackCircle(onBack = { close() })
+            BackCircle(onBack = { close() }, tint = Color.White)
             Spacer(Modifier.width(10.dp))
             Text(
                 status.label,

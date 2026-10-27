@@ -269,7 +269,8 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
             }
             is ReadState.Ready -> {
                 val d = s.detail
-                LazyColumn(Modifier.fillMaxSize()) {
+                val readState = androidx.compose.foundation.lazy.rememberLazyListState()
+                LazyColumn(Modifier.fillMaxSize(), state = readState) {
                     item {
                         if (d.summary.coverUrl != null) {
                             Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f)) {
@@ -328,7 +329,7 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
                         Spacer(Modifier.height(48.dp))
                     }
                 }
-                BackFab(onBack)
+                BackFab(onBack, readState)
             }
         }
     }

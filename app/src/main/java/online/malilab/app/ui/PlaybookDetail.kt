@@ -109,7 +109,7 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
             }
             is DetailState.Ready -> {
                 DetailContent(s.detail, s.offline, listState, onOpenModule)
-                BackFab(onBack)
+                BackFab(onBack, listState)
                 PlanFab(
                     onClick = { onPlan(s.detail.summary.title) },
                     modifier = Modifier

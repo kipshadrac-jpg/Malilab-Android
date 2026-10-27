@@ -155,7 +155,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
             Modifier.fillMaxWidth().background(Mali.TealTop).statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BackCircle(onBack = onClose)
+            BackCircle(onBack = onClose, tint = Color.White)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text("Calculator Lab", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)

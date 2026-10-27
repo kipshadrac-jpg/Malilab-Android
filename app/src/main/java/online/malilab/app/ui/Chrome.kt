@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -72,23 +73,30 @@ fun firstItemProgress(state: LazyListState, from: Float, to: Float): Float {
     return progress
 }
 
+/** The back arrow: no frame, just the icon. [tint] is white on the teal bars. */
 @Composable
-fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f) {
+fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f, tint: Color = Mali.Ink) {
     Box(
         Modifier
-            .size(42.dp)
+            .size(44.dp)
             .clip(CircleShape)
-            .background(Mali.Surface.copy(alpha = circleAlpha))
             .clickable(onClick = onBack)
             .semantics { contentDescription = "Back" },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Mali.Ink)
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
     }
 }
 
-/** The one fixed control on a detail page: a round back arrow in the top-left corner. */
+/** Back arrow at the top-left of a detail page. It lives with the content: it scrolls away as you read. */
 @Composable
-fun BackFab(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.statusBarsPadding().padding(start = 12.dp, top = 8.dp)) { BackCircle(onBack) }
+fun BackFab(onBack: () -> Unit, state: LazyListState, modifier: Modifier = Modifier) {
+    val atTop by remember(state) { derivedStateOf { state.firstVisibleItemIndex == 0 } }
+    if (!atTop) return
+    Box(
+        modifier
+            .statusBarsPadding()
+            .padding(start = 12.dp, top = 8.dp)
+            .graphicsLayer { translationY = -state.firstVisibleItemScrollOffset.toFloat() },
+    ) { BackCircle(onBack) }
 }

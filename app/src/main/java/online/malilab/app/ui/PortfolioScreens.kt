@@ -656,7 +656,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                         step == 1 && existing == null -> step = 0
                         else -> onClose()
                     }
-                })
+                }, tint = Color.White)
                 Column {
                     Text(if (existing != null) "Change plan" else "New plan", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     Text(
@@ -834,7 +834,7 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
                 .padding(horizontal = 14.dp, vertical = 14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackCircle(onBack)
+                BackCircle(onBack, tint = Color.White)
                 Column(Modifier.weight(1f)) {
                     Text(plan.name, fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(v.title + if (plan.provider.isNotBlank()) " · " + plan.provider else "", fontSize = 13.sp, color = Color.White.copy(alpha = 0.88f))
