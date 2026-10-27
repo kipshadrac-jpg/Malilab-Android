@@ -1,6 +1,14 @@
 package online.malilab.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +66,7 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("") }
     var picker by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(active) { if (active) NoteStore.refresh() }
 
@@ -70,7 +79,45 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
 
     Box(Modifier.fillMaxSize().background(Mali.Cream)) {
         LazyColumn(Modifier.fillMaxSize()) {
-            item { ScreenHeader("Plan", "Write it down. Test the numbers. Decide.") }
+            item {
+                Column {
+                    ScreenHeader(
+                        "Notes", "Write it down. Test the numbers. Decide.",
+                        showProfile = false,
+                        trailing = {
+                            Box(
+                                Modifier.size(44.dp).clip(CircleShape).clickable { menuOpen = !menuOpen }
+                                    .semantics { contentDescription = if (menuOpen) "Close tags" else "Tags" },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (menuOpen) Icon(Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(30.dp))
+                                else Icon(Icons.Filled.Menu, null, tint = Color.White, modifier = Modifier.size(30.dp))
+                            }
+                        },
+                    )
+                    if (menuOpen) {
+                        Column(Modifier.fillMaxWidth().background(Color(0xFF0A4A43)).padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            val entries = listOf("All", FAVOURITES) + COLLECTIONS
+                            entries.forEach { name ->
+                                val value = if (name == "All") "" else name
+                                val on = filter == value
+                                Text(
+                                    name,
+                                    fontSize = 17.sp,
+                                    fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Medium,
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .padding(vertical = 3.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(if (on) Color.White.copy(alpha = 0.18f) else Color.Transparent)
+                                        .clickable { filter = value; menuOpen = false }
+                                        .padding(horizontal = 22.dp, vertical = 11.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             item {
                 Column(Modifier.padding(16.dp)) {
                     Row(
@@ -95,13 +142,9 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ActionChip("All", selected = filter.isEmpty()) { filter = "" }
-                        ActionChip(FAVOURITES, selected = filter == FAVOURITES, color = Mali.Amber) { filter = if (filter == FAVOURITES) "" else FAVOURITES }
-                        COLLECTIONS.forEach { c ->
-                            ActionChip(c, selected = filter == c, color = Mali.accentFor(c)) { filter = if (filter == c) "" else c }
-                        }
+                    if (filter.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        ActionChip("$filter  ✕", selected = true, color = if (filter == FAVOURITES) Mali.Amber else Mali.accentFor(filter)) { filter = "" }
                     }
                     if (!NoteStore.online) {
                         Spacer(Modifier.height(10.dp))
@@ -182,39 +225,43 @@ private fun EmptyPlan(hasNotes: Boolean, onNew: () -> Unit) {
 @Composable
 private fun NoteCard(e: NoteEntry, onClick: () -> Unit) {
     val accent = Mali.accentFor(e.collection.ifBlank { e.uid })
-    Row(
+    val shape = RoundedCornerShape(12.dp)
+    Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(shape)
             .background(Mali.Surface)
-            .clickable(onClick = onClick),
+            .background(accent.copy(alpha = 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.40f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Box(Modifier.width(6.dp).height(110.dp).background(accent))
-        Column(Modifier.weight(1f).padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    e.title.ifBlank { "Untitled note" },
-                    fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                )
-                if (e.favourite) Text("★", color = Mali.Amber, fontSize = 18.sp)
-            }
-            if (e.snippet.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(e.snippet, fontSize = 14.sp, lineHeight = 20.sp, color = Mali.InkSoft, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-            Spacer(Modifier.height(8.dp))
-            val bits = listOfNotNull(
-                e.collection.ifBlank { null },
-                NoteStore.ago(e.updatedAt).ifBlank { null },
-                if (e.dirty) "Not sent yet" else null,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                e.title.ifBlank { "Untitled note" },
+                fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
-            Text(bits.joinToString("  ·  "), fontSize = 12.sp, color = if (e.dirty) Mali.Amber else accent, fontWeight = FontWeight.Bold)
-            if (e.tags.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(e.tags.joinToString("  ") { "#$it" }, fontSize = 12.sp, color = Mali.InkSoft, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+            if (e.favourite) Text("★", color = Mali.Amber, fontSize = 18.sp)
+        }
+        if (e.snippet.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(e.snippet, fontSize = 14.sp, lineHeight = 20.sp, color = Mali.InkSoft, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                e.collection.ifBlank { "Note" },
+                fontSize = 12.sp, color = accent, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            )
+            val right = listOfNotNull(NoteStore.ago(e.updatedAt).ifBlank { null }, if (e.dirty) "Not sent yet" else null).joinToString("  ·  ")
+            Text(right, fontSize = 12.sp, fontStyle = FontStyle.Italic, color = if (e.dirty) Mali.Amber else Mali.InkSoft)
+        }
+        if (e.tags.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            Text(e.tags.joinToString("  ") { "#$it" }, fontSize = 12.sp, color = Mali.InkSoft, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

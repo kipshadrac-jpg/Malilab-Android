@@ -34,7 +34,7 @@ import online.malilab.app.ui.theme.Mali
 
 /** Top of the Home and Learn pages: one flat teal block, identical to the status bar, with a straight bottom edge. */
 @Composable
-fun ScreenHeader(title: String, subtitle: String) {
+fun ScreenHeader(title: String, subtitle: String, showProfile: Boolean = true, trailing: (@Composable () -> Unit)? = null) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -42,11 +42,12 @@ fun ScreenHeader(title: String, subtitle: String) {
             .statusBarsPadding()
             .padding(horizontal = 18.dp, vertical = 20.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             val back = LocalHeaderBack.current
             val profile = LocalOpenProfile.current
             when {
                 back != null -> Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) { BackCircle(back, tint = Color.White) }
+                !showProfile -> Unit
                 profile != null -> ProfileButton(profile)
                 else -> Box(
                     Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Mali.Surface),
@@ -55,10 +56,11 @@ fun ScreenHeader(title: String, subtitle: String) {
                     Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(44.dp))
                 }
             }
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(title, fontSize = 28.sp, lineHeight = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 Text(subtitle, fontSize = 14.sp, color = Mali.TealDeep)
             }
+            trailing?.invoke()
         }
     }
 }
