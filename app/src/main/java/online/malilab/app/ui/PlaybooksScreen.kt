@@ -79,11 +79,11 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
     }
 
     // The header and the phone's status bar are the same teal, so white icons read well.
-    StatusBarIcons(darkIcons = progress > 0.5f, active = active)
+    StatusBarIcons(darkIcons = true, active = active)
 
     Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            item { ScreenHeader("Playbooks", "Pick a situation. Follow the steps.") }
+            item { IntroCard("Pick a situation. Follow the steps.", androidx.compose.material.icons.Icons.Filled.Star) }
             when (val s = state) {
                 is ListState.Loading -> items(3) { SkeletonCard() }
                 is ListState.Failed -> item {

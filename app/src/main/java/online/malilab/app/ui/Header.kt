@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -53,7 +55,7 @@ fun ScreenHeader(title: String, subtitle: String, showProfile: Boolean = true, t
                     Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(Mali.Surface),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(44.dp))
+                    Image(painterResource(R.drawable.logo_wallet), contentDescription = "MaliLab", modifier = Modifier.size(44.dp))
                 }
             }
             Column(Modifier.weight(1f)) {
@@ -84,5 +86,40 @@ fun ProfileButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(Icons.Filled.Person, contentDescription = null, tint = Mali.TealDeep, modifier = Modifier.size(30.dp))
+    }
+}
+
+
+/**
+ * The introduction at the top of Learn, Discover and Playbooks: a teal card with one line of words,
+ * and a white square tile beside it holding the page's icon. It scrolls away with the page.
+ */
+@Composable
+fun IntroCard(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Row(
+        Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .weight(1f)
+                .height(78.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Mali.TealTop, Mali.Teal))),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(text, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 20.dp))
+        }
+        Box(
+            Modifier
+                .size(78.dp)
+                .shadow(6.dp, RoundedCornerShape(18.dp))
+                .clip(RoundedCornerShape(18.dp))
+                .background(Mali.Surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = Mali.TealTop, modifier = Modifier.size(38.dp))
+        }
     }
 }

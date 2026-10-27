@@ -59,11 +59,11 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
         }
     }
 
-    StatusBarIcons(darkIcons = progress > 0.5f, active = active)
+    StatusBarIcons(darkIcons = true, active = active)
 
     Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            item { ScreenHeader("Learn", "Each module is a book of lessons.") }
+            item { IntroCard("Each module is a book of lessons.", NavIcons.Book) }
             when (val s = state) {
                 is LearnState.Loading -> item {
                     Text("Opening the library…", color = Mali.InkSoft, fontSize = 15.sp, modifier = Modifier.padding(20.dp))

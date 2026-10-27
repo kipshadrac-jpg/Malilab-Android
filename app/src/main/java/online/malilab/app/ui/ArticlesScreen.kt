@@ -97,11 +97,11 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
         return
     }
 
-    StatusBarIcons(darkIcons = progress > 0.5f, active = active)
+    StatusBarIcons(darkIcons = true, active = active)
 
     Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            item { ScreenHeader("Discover", "Read first. Then follow the playbook.") }
+            item { IntroCard("Read first. Then follow the playbook.", NavIcons.Compass) }
             when (val s = state) {
                 is FeedState.Loading -> items(3) { SkeletonCard() }
                 is FeedState.Failed -> item {

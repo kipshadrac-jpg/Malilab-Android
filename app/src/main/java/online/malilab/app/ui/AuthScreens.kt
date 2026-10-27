@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -92,10 +93,10 @@ private fun Landing(onSignIn: () -> Unit, onRegister: () -> Unit) {
         ) {
             Spacer(Modifier.weight(1f))
             Box(
-                Modifier.size(110.dp).clip(RoundedCornerShape(30.dp)).background(Mali.Surface),
+                Modifier.size(124.dp).clip(RoundedCornerShape(34.dp)).background(Mali.Surface),
                 contentAlignment = Alignment.Center,
             ) {
-                Image(painterResource(R.drawable.logo_mark), contentDescription = "MaliLab", modifier = Modifier.size(90.dp))
+                Image(painterResource(R.drawable.logo_wallet), contentDescription = "MaliLab", modifier = Modifier.width(92.dp))
             }
             Spacer(Modifier.height(24.dp))
             Text("Welcome to MaliLab", fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, textAlign = TextAlign.Center)
