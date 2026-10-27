@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -187,6 +188,7 @@ fun LessonScreen(
                     }
                     item { Spacer(Modifier.height(120.dp)) }
                 }
+                StatusScrim(readState, accent.copy(alpha = 0.10f).compositeOver(Mali.Surface), Modifier.align(Alignment.TopStart))
                 BackFab(onBack, readState)
                 PlanFab(
                     onClick = { onPlan(s.lesson.title) },

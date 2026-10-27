@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -74,14 +75,14 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember { mutableStateOf<DetailState>(DetailState.Loading) }
     val listState = rememberLazyListState()
-    val progress = firstItemProgress(listState, 0.6f, 0.95f)
+    val scrimA = statusScrimAlpha(listState)
 
     BackHandler(enabled = active) {
         onBack()
     }
 
     // Light icons over the cover picture; dark ones once the cream bar has faded in (or while loading).
-    StatusBarIcons(darkIcons = state !is DetailState.Ready || progress > 0.5f, active = active)
+    StatusBarIcons(darkIcons = state !is DetailState.Ready || scrimA > 0.5f, active = active)
 
     LaunchedEffect(slug, attempt) {
         state = DetailState.Loading
@@ -109,6 +110,7 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
             }
             is DetailState.Ready -> {
                 DetailContent(s.detail, s.offline, listState, onOpenModule)
+                StatusScrim(listState, Mali.accentFor(s.detail.summary.slug).copy(alpha = 0.10f).compositeOver(Mali.Surface), Modifier.align(Alignment.TopStart))
                 BackFab(onBack, listState)
                 PlanFab(
                     onClick = { onPlan(s.detail.summary.title) },

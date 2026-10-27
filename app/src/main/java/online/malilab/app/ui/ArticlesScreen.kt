@@ -245,8 +245,10 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
     val accent = Mali.accentFor(slug)
 
     BackHandler(enabled = active) { onBack() }
+    val readState = androidx.compose.foundation.lazy.rememberLazyListState()
     val hasCover = (state as? ReadState.Ready)?.detail?.summary?.coverUrl != null
-    StatusBarIcons(darkIcons = !hasCover, active = active)
+    val scrimA = statusScrimAlpha(readState)
+    StatusBarIcons(darkIcons = !hasCover || scrimA > 0.5f, active = active)
 
     LaunchedEffect(slug, attempt) {
         state = ReadState.Loading
@@ -269,7 +271,6 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
             }
             is ReadState.Ready -> {
                 val d = s.detail
-                val readState = androidx.compose.foundation.lazy.rememberLazyListState()
                 LazyColumn(Modifier.fillMaxSize(), state = readState) {
                     item {
                         if (d.summary.coverUrl != null) {
@@ -329,6 +330,7 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
                         Spacer(Modifier.height(48.dp))
                     }
                 }
+                StatusScrim(readState, Mali.Surface, Modifier.align(Alignment.TopStart))
                 BackFab(onBack, readState)
             }
         }

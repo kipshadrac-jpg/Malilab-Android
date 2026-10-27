@@ -88,6 +88,33 @@ fun BackCircle(onBack: () -> Unit, circleAlpha: Float = 0.9f, tint: Color = Mali
     }
 }
 
+/** 0 while the page is at the top, rising to 1 as the content scrolls up under the phone's status bar. */
+@Composable
+fun statusScrimAlpha(state: LazyListState): Float {
+    val statusPx = WindowInsets.statusBars.getTop(androidx.compose.ui.platform.LocalDensity.current).coerceAtLeast(1)
+    val a by remember(state, statusPx) {
+        derivedStateOf {
+            if (state.firstVisibleItemIndex > 0) 1f
+            else (state.firstVisibleItemScrollOffset.toFloat() / statusPx).coerceIn(0f, 1f)
+        }
+    }
+    return a
+}
+
+/** A solid band behind the phone's status bar that fades in once content scrolls up under it, so text never runs through the clock. */
+@Composable
+fun StatusScrim(state: LazyListState, color: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    val a = statusScrimAlpha(state)
+    if (a <= 0f) return
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+            .alpha(a)
+            .background(color),
+    )
+}
+
 /** Back arrow at the top-left of a detail page. It lives with the content: it scrolls away as you read. */
 @Composable
 fun BackFab(onBack: () -> Unit, state: LazyListState, modifier: Modifier = Modifier) {
