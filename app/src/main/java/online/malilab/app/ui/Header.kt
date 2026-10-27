@@ -2,6 +2,7 @@ package online.malilab.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,22 +74,46 @@ val LocalOpenProfile = staticCompositionLocalOf<(() -> Unit)?> { null }
 /** Set while the profile page is open, so its header shows a back arrow where the profile button was. */
 val LocalHeaderBack = staticCompositionLocalOf<(() -> Unit)?> { null }
 
-/** The round profile icon in the top-left corner of the main pages. It opens the Me page. */
+/** The small round profile icon: white disc, thin teal ring, outline person. It opens Profile & Settings. */
 @Composable
 fun ProfileButton(onClick: () -> Unit) {
     Box(
         Modifier
-            .size(54.dp)
+            .size(40.dp)
             .clip(CircleShape)
-            .background(Mali.Surface)
+            .background(Color.White)
+            .border(2.dp, Mali.TealLight, CircleShape)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = "Profile" },
+            .semantics { contentDescription = "Profile and settings" },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Person, contentDescription = null, tint = Mali.TealDeep, modifier = Modifier.size(30.dp))
+        Icon(NavIcons.Person, contentDescription = null, tint = Mali.TealFixed, modifier = Modifier.size(24.dp))
     }
 }
 
+/** Set by the main screen so the portfolio header can open the notifications list. */
+val LocalOpenNotifications = staticCompositionLocalOf<(() -> Unit)?> { null }
+
+/** The bell: an outline icon with a small red dot when there is something to read. */
+@Composable
+fun BellButton(unread: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = if (unread) "Notifications, new" else "Notifications" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(NavIcons.Bell, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+        if (unread) {
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 9.dp).size(10.dp)
+                    .clip(CircleShape).background(Color(0xFFFF5A4D)).border(1.5.dp, Mali.OceanTop, CircleShape),
+            )
+        }
+    }
+}
 
 /**
  * The introduction at the top of Learn, Discover and Playbooks: a teal card with one line of words,

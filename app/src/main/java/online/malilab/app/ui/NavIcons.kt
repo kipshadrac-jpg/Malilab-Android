@@ -117,4 +117,95 @@ object NavIcons {
             }
         }
     }
+
+    private fun PathBuilder.circle(cx: Float, cy: Float, r: Float) {
+        moveTo(cx - r, cy)
+        arcTo(r, r, 0f, true, true, cx + r, cy)
+        arcTo(r, r, 0f, true, true, cx - r, cy)
+        close()
+    }
+
+    /** Playbooks: a clipboard with a numbered checklist. */
+    val Checklist: ImageVector by lazy {
+        line("Checklist") {
+            stroke {
+                moveTo(9f, 4.6f); horizontalLineTo(6.6f)
+                arcTo(1.8f, 1.8f, 0f, false, false, 4.8f, 6.4f); verticalLineTo(19.6f)
+                arcTo(1.8f, 1.8f, 0f, false, false, 6.6f, 21.4f); horizontalLineTo(17.4f)
+                arcTo(1.8f, 1.8f, 0f, false, false, 19.2f, 19.6f); verticalLineTo(6.4f)
+                arcTo(1.8f, 1.8f, 0f, false, false, 17.4f, 4.6f); horizontalLineTo(15f)
+            }
+            stroke {
+                moveTo(8.8f, 6.4f); verticalLineTo(3.6f); horizontalLineTo(15.2f); verticalLineTo(6.4f); close()
+            }
+            for (y in listOf(10.6f, 14.4f, 18.2f)) {
+                stroke(1.5f) { circle(8.4f, y, 1.15f) }
+                stroke(1.5f) { moveTo(11.6f, y); horizontalLineTo(16.6f) }
+            }
+        }
+    }
+
+    val Person: ImageVector by lazy {
+        line("Person") {
+            stroke(1.8f) { circle(12f, 8f, 3.6f) }
+            stroke(1.8f) {
+                moveTo(4.8f, 20.2f)
+                curveTo(4.8f, 15.6f, 8f, 14.2f, 12f, 14.2f)
+                curveTo(16f, 14.2f, 19.2f, 15.6f, 19.2f, 20.2f)
+            }
+        }
+    }
+
+    val Bell: ImageVector by lazy {
+        line("Bell") {
+            stroke(1.7f) {
+                moveTo(6f, 16.5f); verticalLineTo(11f)
+                arcTo(6f, 6f, 0f, false, true, 18f, 11f); verticalLineTo(16.5f)
+                lineTo(19.6f, 18.4f); horizontalLineTo(4.4f); close()
+            }
+            stroke(1.7f) { moveTo(12f, 3.2f); verticalLineTo(5f) }
+            stroke(1.7f) { moveTo(9.8f, 20.6f); arcTo(2.2f, 2.2f, 0f, false, false, 14.2f, 20.6f) }
+        }
+    }
+
+    val Chevron: ImageVector by lazy {
+        line("Chevron") { stroke(1.9f) { moveTo(9.4f, 5.8f); lineTo(15.6f, 12f); lineTo(9.4f, 18.2f) } }
+    }
+
+    val Receipt: ImageVector by lazy {
+        line("Receipt") {
+            stroke { moveTo(6f, 3.4f); horizontalLineTo(18f); verticalLineTo(20.6f); lineTo(15.5f, 19f); lineTo(13f, 20.6f); lineTo(10.5f, 19f); lineTo(8f, 20.6f); lineTo(6f, 19f); close() }
+            stroke(1.5f) { moveTo(9.2f, 8.4f); horizontalLineTo(14.8f); moveTo(9.2f, 12.2f); horizontalLineTo(14.8f) }
+        }
+    }
+
+    val CheckCircle: ImageVector by lazy {
+        line("CheckCircle") {
+            stroke { circle(12f, 12f, 8.2f) }
+            stroke(1.8f) { moveTo(8.2f, 12.3f); lineTo(11f, 15f); lineTo(16f, 9.4f) }
+        }
+    }
+
+    val Sliders: ImageVector by lazy {
+        line("Sliders") {
+            stroke(1.6f) { moveTo(4.5f, 7f); horizontalLineTo(19.5f); moveTo(4.5f, 12f); horizontalLineTo(19.5f); moveTo(4.5f, 17f); horizontalLineTo(19.5f) }
+            stroke(1.6f) { circle(9f, 7f, 2f) }
+            stroke(1.6f) { circle(15f, 12f, 2f) }
+            stroke(1.6f) { circle(9f, 17f, 2f) }
+        }
+    }
+
+    val Info: ImageVector by lazy {
+        line("Info") {
+            stroke { circle(12f, 12f, 8.2f) }
+            stroke(1.8f) { moveTo(12f, 11f); verticalLineTo(16f); moveTo(12f, 8.2f); verticalLineTo(8.3f) }
+        }
+    }
+
+    val Logout: ImageVector by lazy {
+        line("Logout") {
+            stroke { moveTo(10f, 4.6f); horizontalLineTo(6.6f); arcTo(1.6f, 1.6f, 0f, false, false, 5f, 6.2f); verticalLineTo(17.8f); arcTo(1.6f, 1.6f, 0f, false, false, 6.6f, 19.4f); horizontalLineTo(10f) }
+            stroke { moveTo(14f, 8f); lineTo(18f, 12f); lineTo(14f, 16f); moveTo(18f, 12f); horizontalLineTo(9f) }
+        }
+    }
 }

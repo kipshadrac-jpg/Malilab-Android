@@ -78,6 +78,7 @@ fun HomeShell() {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     var openPlaybook by rememberSaveable { mutableStateOf<String?>(null) }
     var openArticle by rememberSaveable { mutableStateOf<String?>(null) }
+    var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var openModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonModule by rememberSaveable { mutableStateOf<String?>(null) }
     var lessonSlug by rememberSaveable { mutableStateOf<String?>(null) }
@@ -101,7 +102,7 @@ fun HomeShell() {
 
     val nothingOpen = openPlaybook == null && openArticle == null && openModule == null && lessonSlug == null && studioUid == null &&
         practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen &&
-        !profileOpen && portfolioUid == null && !editorOpen
+        !profileOpen && !notificationsOpen && portfolioUid == null && !editorOpen
 
     // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
     fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
@@ -138,7 +139,7 @@ fun HomeShell() {
         }
     }
 
-    CompositionLocalProvider(LocalOpenProfile provides { profileOpen = true }) {
+    CompositionLocalProvider(LocalOpenProfile provides { profileOpen = true }, LocalOpenNotifications provides { notificationsOpen = true }) {
     Box(Modifier.fillMaxSize()) {
         MainScaffold(
             selected = selected,
@@ -175,6 +176,15 @@ fun HomeShell() {
                     )
                 }
             }
+        }
+        if (notificationsOpen) {
+            androidx.activity.compose.BackHandler { notificationsOpen = false }
+            NotificationsScreen(
+                active = !paywallOpen && portfolioUid == null,
+                onBack = { notificationsOpen = false },
+                onOpenPaywall = { notificationsOpen = false; paywallSlug = null; paywallTitle = ""; paywallOpen = true },
+                onOpenPlan = { notificationsOpen = false; portfolioUid = it },
+            )
         }
         if (editorOpen) {
             androidx.compose.runtime.key(editorUid) {

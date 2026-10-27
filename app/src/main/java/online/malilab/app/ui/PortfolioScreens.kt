@@ -349,19 +349,26 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
 
 @Composable
 private fun PfHeader(t: PfTotals, empty: Boolean) {
+    // The card keeps its old height and grows downward: the extra 30dp is the curved edge, like a bank balance card.
     Column(
         Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(bottomStart = 34.dp, bottomEnd = 34.dp))
             .background(Brush.verticalGradient(listOf(Mali.OceanTop, Mali.OceanBottom)))
             .statusBarsPadding()
-            .padding(horizontal = 18.dp, vertical = 18.dp),
+            .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 48.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val profile = LocalOpenProfile.current
+            val bell = LocalOpenNotifications.current
             if (profile != null) ProfileButton(profile)
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text("My portfolio", fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 Text("Everything you save and invest, in one place.", fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
+            }
+            if (bell != null) {
+                val unread = noticeItems(onOpenPaywall = {}, onOpenPlan = {}).isNotEmpty()
+                BellButton(unread, bell)
             }
         }
         Spacer(Modifier.height(18.dp))

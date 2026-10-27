@@ -46,19 +46,8 @@ fun BillingStrip(onOpenPaywall: () -> Unit) {
                 )
             }
         }
-    } else if (st.trialActive) {
-        val days = (st.trialSeconds + 86399) / 86400
-        Row(
-            Modifier.fillMaxWidth().background(Mali.Amber.copy(alpha = 0.12f)).clickable(onClick = onOpenPaywall).padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                "Free trial: " + (if (days <= 1) "less than a day" else "$days days") + " left. Modules are KES ${st.priceModule} each.",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Mali.Amber, textAlign = TextAlign.Center,
-            )
-        }
     }
+    // The free-trial countdown no longer shows here: it lives in Notifications.
 }
 
 /** One line for the Me tab. */

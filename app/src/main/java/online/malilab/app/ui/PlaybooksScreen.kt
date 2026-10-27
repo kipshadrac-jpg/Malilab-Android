@@ -83,7 +83,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
 
     Box(Modifier.fillMaxSize().background(Mali.Surface)) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            item { IntroCard("Pick a situation. Follow the steps.", androidx.compose.material.icons.Icons.Filled.Star) }
+            item { IntroCard("Pick a situation. Follow the steps.", NavIcons.Checklist) }
             when (val s = state) {
                 is ListState.Loading -> items(3) { SkeletonCard() }
                 is ListState.Failed -> item {
