@@ -131,7 +131,7 @@ private fun DetailContent(d: PlaybookDetail, offline: Boolean, listState: LazyLi
     LazyColumn(Modifier.fillMaxSize(), state = listState, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Box(Modifier.fillMaxWidth()) {
-                CoverImage(s.coverUrl, s.coverAlt, accent, Modifier.fillMaxWidth().aspectRatio(1200f / 630f))
+                CoverImage(s.coverUrl, s.coverAlt, accent, Modifier.fillMaxWidth().aspectRatio(1200f / 630f), sprout = true)
                 // a soft shade so the clock and battery stay readable over any picture
                 Box(
                     Modifier

@@ -99,7 +99,7 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
 
     StatusBarIcons(darkIcons = true, active = active)
 
-    Box(Modifier.fillMaxSize().background(Mali.Surface)) {
+    Box(Modifier.fillMaxSize().background(Mali.Cream).background(Mali.Sand.copy(alpha = 0.45f))) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { IntroCard("Read first. Then follow the playbook.", NavIcons.Compass) }
             when (val s = state) {
@@ -170,30 +170,31 @@ private fun CategoryChip(label: String, selected: Boolean, onClick: () -> Unit) 
     )
 }
 
+/** Sharp-edged white card on the page: cover edge to edge, title, summary, then the category and an Open button. */
 @Composable
 fun ArticleCard(a: ArticleSummary, onOpen: () -> Unit) {
     val accent = Mali.accentFor(a.slug)
-    Column(Modifier.fillMaxWidth().background(Mali.Surface).clickable(onClick = onOpen).padding(bottom = 22.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 10.dp).background(Mali.Surface).clickable(onClick = onOpen)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f)) {
             CoverImage(a.coverUrl, a.coverAlt, accent, Modifier.fillMaxSize())
-            if (a.categoryLabel.isNotBlank()) {
-                Text(
-                    a.categoryLabel,
-                    color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(12.dp).clip(RoundedCornerShape(8.dp)).background(accent).padding(horizontal = 9.dp, vertical = 4.dp),
-                )
-            }
         }
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
-            Text(a.title, fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp)) {
+            Text(a.title, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
             if (a.summary.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(a.summary, fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft)
+                Spacer(Modifier.height(6.dp))
+                Text(a.summary, fontSize = 14.sp, lineHeight = 20.sp, color = Mali.InkSoft, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
-            Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Read article", color = accent, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-                Spacer(Modifier.size(6.dp))
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    a.categoryLabel.uppercase(),
+                    fontSize = 12.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.ExtraBold, color = accent,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "Read article",
+                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Mali.TealDeep).padding(horizontal = 20.dp, vertical = 9.dp),
+                )
             }
         }
     }
