@@ -422,6 +422,28 @@ object PortfolioEngine {
         return if (whenDue <= end) whenDue else null
     }
 
+    /**
+     * Like [nextDue], but skips a due date once the person has logged a payment for it (a payment dated inside that
+     * payment's period, even if made early). This is what ticking a reminder does.
+     */
+    fun nextOpenDue(p: Plan, today: Day = Day.today()): Day? {
+        val gap = when (p.interval) { "daily" -> 1; "weekly" -> 7; "quarterly" -> 91; "semiannual" -> 182; "annual" -> 365; else -> 30 }
+        var d = nextDue(p, today)
+        var guard = 0
+        while (d != null && guard < 400) {
+            guard++
+            val day: Day = d
+            val lo = day.plusDays(-gap)
+            val paid = p.payments.any { pay ->
+                val pd = Day.parse(pay.date)
+                pd != null && pd > lo && pd <= day
+            }
+            if (!paid) return day
+            d = nextDue(p, day.plusDays(1))
+        }
+        return null
+    }
+
     /** The money paid in each month on average, for the "you commit" line. */
     fun monthlyCommitment(p: Plan): Double {
         if (p.contribution <= 0.0 || p.interval == "once") return 0.0

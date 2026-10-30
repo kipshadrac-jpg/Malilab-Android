@@ -166,12 +166,17 @@ object NoteStore {
     }
 
     // ------------------------------------------------------------------ local storage
+    /** The website only knows playbook, module and lesson notes; an article's note is sent without a context. */
+    private fun ctxJson(n: Note): JSONObject =
+        if (n.ctxKind.isBlank() || n.ctxKind == "article") JSONObject()
+        else JSONObject().put("kind", n.ctxKind).put("slug", n.ctxSlug).put("title", n.ctxTitle)
+
     private fun noteToJson(n: Note): JSONObject = JSONObject()
         .put("uid", n.uid).put("title", n.title)
         .put("blocks", JSONArray().also { a -> n.blocks.forEach { a.put(it.toJson()) } })
         .put("collection", n.collection).put("tags", JSONArray(n.tags)).put("favourite", n.favourite)
         .put("template", n.template)
-        .put("context", if (n.ctxKind.isBlank()) JSONObject() else JSONObject().put("kind", n.ctxKind).put("slug", n.ctxSlug).put("title", n.ctxTitle))
+        .put("context", ctxJson(n))
         .put("version", n.version).put("updated_at", n.updatedAt).put("dirty", n.dirty).put("rev", n.rev)
 
     private fun noteFromJson(o: JSONObject): Note {
@@ -409,7 +414,7 @@ object NoteStore {
             .put("blocks", JSONArray().also { a -> n.blocks.forEach { a.put(it.toJson()) } })
             .put("collection", n.collection).put("tags", JSONArray(n.tags)).put("favourite", n.favourite)
             .put("template", n.template)
-            .put("context", if (n.ctxKind.isBlank()) JSONObject() else JSONObject().put("kind", n.ctxKind).put("slug", n.ctxSlug).put("title", n.ctxTitle))
+            .put("context", ctxJson(n))
         return try {
             val newVersion: Int
             if (n.version == 0) {

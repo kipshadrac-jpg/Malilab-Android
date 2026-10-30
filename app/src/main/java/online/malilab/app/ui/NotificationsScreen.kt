@@ -70,7 +70,7 @@ fun noticeItems(onOpenPaywall: () -> Unit, onOpenPlan: (String) -> Unit): List<N
     for (p in PortfolioStore.plans) {
         if (p.contribution <= 0.0) continue
         val s = PortfolioEngine.standing(p, today)
-        val due = s.nextDue ?: continue
+        val due = PortfolioEngine.nextOpenDue(p, today) ?: continue
         if (s.matured) continue
         val left = (due.epoch() - today.epoch()).toInt()
         if (left < 0 || left > 7) continue

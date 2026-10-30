@@ -64,6 +64,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -244,7 +246,10 @@ private fun PfGrowth(series: List<SeriesPoint>, accent: Color) {
 // ============================================================================================ what the portfolio adds up to
 private class PfHeld(val plan: Plan, val standing: Standing)
 private class PfSlice(val vehicle: Vehicle, val value: Double, val weight: Double)
-private class PfTotals(val value: Double, val paid: Double, val monthly: Double, val slices: List<PfSlice>, val held: List<PfHeld>)
+private class PfTotals(
+    val value: Double, val paid: Double, val monthly: Double, val slices: List<PfSlice>, val held: List<PfHeld>,
+    val matures: Double, val blendedRate: Double, val incomeYear: Double,
+)
 
 private fun totalsOf(plans: List<Plan>): PfTotals {
     val held = plans.map { PfHeld(it, PortfolioEngine.standing(it)) }
@@ -255,7 +260,13 @@ private fun totalsOf(plans: List<Plan>): PfTotals {
     for (h in held) byCategory[h.plan.category] = (byCategory[h.plan.category] ?: 0.0) + h.standing.value
     val slices = byCategory.map { (key, v) -> PfSlice(Vehicles.get(key), v, if (value > 0) v / value * 100.0 else 0.0) }
         .sortedByDescending { it.value }
-    return PfTotals(value, paid, monthly, slices, held)
+    // What it all grows to by the end of every plan, the value-weighted rate, and the interest a year at today's values.
+    val matures = held.sumOf { if (it.standing.matured) it.standing.value else PortfolioEngine.project(it.plan).final.balance }
+    val live = held.filter { !it.standing.matured }
+    val weight = live.sumOf { it.standing.value }
+    val blended = if (live.isEmpty()) 0.0 else if (weight > 0) live.sumOf { currentRate(it.plan) * it.standing.value } / weight else live.sumOf { currentRate(it.plan) } / live.size
+    val incomeYear = live.sumOf { it.standing.value * currentRate(it.plan) / 100.0 * (1.0 - it.plan.taxPct / 100.0) }
+    return PfTotals(value, paid, monthly, slices, held, matures, blended, incomeYear)
 }
 
 private fun percent(v: Double): String = String.format(java.util.Locale.US, "%.1f%%", v)
@@ -313,8 +324,16 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
                 item { PfEmpty(onAdd) }
             } else {
                 item { PfAllocation(totals) }
-                val dues = totals.held.filter { it.standing.nextDue != null && !it.standing.matured }.sortedBy { it.standing.nextDue }.take(3)
-                if (dues.isNotEmpty()) item { PfDue(dues, onOpenPlan) }
+                if (totals.blendedRate > 0.0) item { PfIncome(totals) }
+                val dues = totals.held.filter { !it.standing.matured }
+                    .mapNotNull { h -> PortfolioEngine.nextOpenDue(h.plan)?.let { d -> h to d } }
+                    .sortedBy { it.second }.take(4)
+                if (dues.isNotEmpty()) item {
+                    PfDue(dues, onOpenPlan) { plan ->
+                        PortfolioStore.save(plan.copy(payments = plan.payments + Payment(UUID.randomUUID().toString(), Day.today().iso(), plan.contribution)))
+                        android.widget.Toast.makeText(context, "Recorded " + kes(plan.contribution) + " for " + plan.name, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
                 item {
                     Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 4.dp)) { PfLabel("MY PLANS") }
                 }
@@ -375,11 +394,16 @@ private fun PfHeader(t: PfTotals, empty: Boolean) {
         Text("WORTH TODAY", fontSize = 12.sp, letterSpacing = 1.4.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.8f))
         Text(kes(t.value), fontSize = 34.sp, lineHeight = 40.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
         if (!empty) {
+            val n = t.held.size
+            Text(
+                "across $n plan" + (if (n == 1) "" else "s") + " · grows to " + shortKes(t.matures) + " by the end",
+                fontSize = 13.sp, color = Color.White.copy(alpha = 0.88f),
+            )
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PfHeaderStat("Paid in", shortKes(t.paid), Modifier.weight(1f))
                 PfHeaderStat("Gained", shortKes(t.value - t.paid), Modifier.weight(1f))
-                PfHeaderStat("Each month", shortKes(t.monthly), Modifier.weight(1f))
+                PfHeaderStat("Blended rate", percent(t.blendedRate), Modifier.weight(1f))
             }
         }
     }
@@ -456,26 +480,77 @@ private fun PfAllocation(t: PfTotals) {
     }
 }
 
+/** What the plans at your blended rate would pay you each month and year if you stopped paying in and just collected. */
 @Composable
-private fun PfDue(dues: List<PfHeld>, onOpen: (String) -> Unit) {
+private fun PfIncome(t: PfTotals) {
+    Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        PfCard {
+            PfLabel("INCOME AT YOUR BLENDED RATE", Mali.OceanTop)
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f)) {
+                    Text(kes(t.incomeYear / 12.0), fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Amber)
+                    Text("a month", fontSize = 13.sp, color = Mali.InkSoft)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(kes(t.incomeYear), fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+                    Text("a year", fontSize = 13.sp, color = Mali.InkSoft)
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                percent(t.blendedRate) + " a year on " + kes(t.value) + ", after any tax you set, if you left it untouched and collected the returns." +
+                    if (t.monthly > 0) " You add about " + kes(t.monthly) + " each month." else "",
+                fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft,
+            )
+        }
+    }
+}
+
+/** Upcoming top-ups. Tick one when you have paid it: it is logged as a payment and the reminder moves to the next date. */
+@Composable
+private fun PfDue(dues: List<Pair<PfHeld, Day>>, onOpen: (String) -> Unit, onTick: (Plan) -> Unit) {
     Box(Modifier.padding(start = 16.dp, end = 16.dp)) {
         PfCard {
-            PfLabel("NEXT PAYMENTS", Mali.Brown)
+            PfLabel("CONTRIBUTION REMINDERS", Mali.Brown)
             Spacer(Modifier.height(8.dp))
-            dues.forEach { h ->
+            dues.forEach { (h, due) ->
+                val left = (due.epoch() - Day.today().epoch()).toInt()
+                val chip = when {
+                    left < 0 -> "late"
+                    left == 0 -> "today"
+                    left == 1 -> "tomorrow"
+                    else -> "in ${left}d"
+                }
+                val v = h.plan.vehicle
                 Row(
-                    Modifier.fillMaxWidth().clickable { onOpen(h.plan.uid) }.padding(vertical = 7.dp),
+                    Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(RoundedCornerShape(14.dp)).background(Mali.Cream)
+                        .clickable { onOpen(h.plan.uid) }.padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(h.plan.vehicle.color))
+                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(v.color), contentAlignment = Alignment.Center) {
+                        Text(h.plan.name.ifBlank { v.title }.take(1).uppercase(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(h.plan.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Mali.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(h.standing.nextDue?.pretty().orEmpty(), fontSize = 12.sp, color = Mali.InkSoft)
+                        Text(kes(h.plan.contribution) + " · " + due.pretty(), fontSize = 12.sp, color = Mali.InkSoft, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Text(kes(h.plan.contribution), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
+                    PfPill(chip, if (left < 0) Mali.Pink else Mali.OceanTop)
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier.size(38.dp).clip(CircleShape).background(Mali.OceanTint)
+                            .clickable { onTick(h.plan) }
+                            .semantics { contentDescription = "I have paid ${h.plan.name}" },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Check, null, tint = Mali.OceanTop, modifier = Modifier.size(20.dp)) }
                 }
             }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Due dates follow each plan's interval. Tap the tick when you have made a contribution to move it forward.",
+                fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft,
+            )
         }
     }
 }

@@ -89,7 +89,7 @@ object Reminders {
         for (p in PortfolioStore.all()) {
             if (!p.reminderOn || p.contribution <= 0.0) continue
             val st = PortfolioEngine.standing(p, today)
-            val due = st.nextDue ?: continue
+            val due = PortfolioEngine.nextOpenDue(p, today) ?: continue
             if (st.matured) continue
             val daysLeft = (due.epoch() - today.epoch()).toInt()
             if (daysLeft > p.reminderDaysBefore) continue
