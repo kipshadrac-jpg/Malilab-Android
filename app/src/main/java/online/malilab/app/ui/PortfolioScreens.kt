@@ -262,7 +262,7 @@ private fun percent(v: Double): String = String.format(java.util.Locale.US, "%.1
 
 // ============================================================================================ the Home tab
 @Composable
-fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenPlaybook: (String) -> Unit, onOpenArticle: (String) -> Unit) {
+fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenPlaybook: (String) -> Unit, onOpenArticle: (String) -> Unit, onAllPlaybooks: () -> Unit = {}) {
     StatusBarIcons(darkIcons = false, active = active)
     LaunchedEffect(active) { if (active) PortfolioStore.refresh() }
     val plans = PortfolioStore.plans
@@ -323,7 +323,7 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
                 }
             }
             val featuredArticles = articles.filter { it.featured }.ifEmpty { articles.take(6) }
-            if (featuredArticles.isNotEmpty()) item { FeaturedArticles(featuredArticles, onOpenArticle) }
+            if (featuredArticles.isNotEmpty()) item { FeaturedArticles(featuredArticles, onOpenArticle, onAllPlaybooks) }
             else if (featured.isNotEmpty()) item { PfFeatured(featured, onOpenPlaybook) }
             item { Spacer(Modifier.height(120.dp)) }
         }

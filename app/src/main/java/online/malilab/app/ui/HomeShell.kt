@@ -128,14 +128,46 @@ fun HomeShell() {
         }
     }
 
-    // The pen button on a playbook or lesson opens the person's own note for it in the Studio.
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+
+    // The note kept for a playbook, lesson or article: the person's existing one, or a fresh one.
+    suspend fun noteFor(kind: String, slug: String, title: String, legacyKey: String): String {
+        if (kind != "article") return NoteStore.forContext(kind, slug, title, Repo.notes(legacyKey))
+        NoteStore.entries.firstOrNull { it.ctxKind == kind && it.ctxSlug == slug }?.let { return it.uid }
+        val uid = NoteStore.create(title = "Notes: $title".take(200), collection = "Learning notes", ctxKind = kind, ctxSlug = slug, ctxTitle = title)
+        NoteStore.pushLater(uid)
+        return uid
+    }
+
+    // The pen button on a playbook, lesson or article opens the person's own note for it in the Studio.
     fun openContextNote(kind: String, slug: String, title: String, legacyKey: String) {
         scope.launch {
             try {
-                studioUid = NoteStore.forContext(kind, slug, title, Repo.notes(legacyKey))
+                studioUid = noteFor(kind, slug, title, legacyKey)
             } catch (e: ApiError) {
                 // Could not start a note right now; the pen button can be tapped again.
             }
+        }
+    }
+
+    // Words selected while reading go straight into that note, as a quote, without leaving the page.
+    fun insertIntoNote(kind: String, slug: String, title: String, legacyKey: String, text: String) {
+        scope.launch {
+            val said = try {
+                val uid = noteFor(kind, slug, title, legacyKey)
+                val n = NoteStore.open(uid)
+                if (n == null) {
+                    "Could not add that. Try again."
+                } else {
+                    val kept = n.blocks.filterNot { it.type == "paragraph" && it.text.isBlank() }
+                    NoteStore.update(n.copy(blocks = kept + Block(type = "quote", text = text) + Block()))
+                    NoteStore.pushLater(uid)
+                    "Added to your notes"
+                }
+            } catch (e: ApiError) {
+                "Could not add that. Try again."
+            }
+            android.widget.Toast.makeText(appContext, said, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -207,6 +239,8 @@ fun HomeShell() {
                 active = openPlaybook == null && studioUid == null,
                 onBack = { openArticle = null },
                 onOpenPlaybook = { openPlaybook = it },
+                onPlan = { title -> openContextNote("article", art, title, "article-$art") },
+                onInsert = { title, text -> insertIntoNote("article", art, title, "article-$art", text) },
             )
         }
         val pb = openPlaybook
@@ -217,6 +251,7 @@ fun HomeShell() {
                 onBack = { openPlaybook = null },
                 onOpenModule = { openModule = it },
                 onPlan = { title -> openContextNote("playbook", pb, title, pb) },
+                onInsert = { title, text -> insertIntoNote("playbook", pb, title, pb, text) },
             )
         }
         val mod = openModule
@@ -240,6 +275,7 @@ fun HomeShell() {
                 onBack = { lessonSlug = null; lessonModule = null },
                 onOpenLesson = { lessonSlug = it },
                 onPlan = { title -> openContextNote("lesson", ls, title, "lesson-$ls") },
+                onInsert = { title, text -> insertIntoNote("lesson", ls, title, "lesson-$ls", text) },
             )
         }
         if (historyOpen) {
@@ -361,7 +397,7 @@ private fun MainScaffold(
         Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (selected) {
-                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook, onOpenArticle = onOpenArticle)
+                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook, onOpenArticle = onOpenArticle, onAllPlaybooks = { DiscoverRequest.playbooks = true; onSelect(1) })
                     1 -> ArticlesScreen(active = active, onOpenArticle = onOpenArticle, onOpenPlaybook = onOpenPlaybook)
                     2 -> LearnScreen(active = active, onOpen = onOpenModule)
                     else -> PlanScreen(active = active, onOpen = onOpenNote)

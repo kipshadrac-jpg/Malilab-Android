@@ -71,7 +71,7 @@ private sealed interface DetailState {
 }
 
 @Composable
-fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenModule: (String) -> Unit, onPlan: (String) -> Unit) {
+fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenModule: (String) -> Unit, onPlan: (String) -> Unit, onInsert: (String, String) -> Unit = { _, _ -> }) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember { mutableStateOf<DetailState>(DetailState.Loading) }
     val listState = rememberLazyListState()
@@ -109,7 +109,9 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
                 )
             }
             is DetailState.Ready -> {
-                DetailContent(s.detail, s.offline, listState, onOpenModule)
+                SelectToNote(onInsert = { onInsert(s.detail.summary.title, it) }) {
+                    DetailContent(s.detail, s.offline, listState, onOpenModule)
+                }
                 StatusScrim(listState, Mali.accentFor(s.detail.summary.slug).copy(alpha = 0.10f).compositeOver(Mali.Surface), Modifier.align(Alignment.TopStart))
                 BackFab(onBack, listState)
                 PlanFab(
@@ -117,7 +119,7 @@ fun PlaybookDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOp
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .navigationBarsPadding()
-                        .padding(18.dp),
+                        .padding(end = 16.dp, bottom = 16.dp),
                 )
             }
         }
@@ -302,32 +304,20 @@ private fun StepCard(step: online.malilab.app.data.Step, accent: Color) {
     }
 }
 
-/** The "My plan" button: a pen inside a softly glowing circle. For now it opens a place to take notes. */
+/** The notes button: a small white circle with a teal pen-and-square, in the bottom right corner. */
 @Composable
 fun PlanFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val glow = rememberInfiniteTransition(label = "glow")
-    val ring by glow.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.9f,
-        animationSpec = infiniteRepeatable(tween(1900, easing = LinearEasing), RepeatMode.Restart),
-        label = "ring",
-    )
-    val ringAlpha = 0.5f * (1.9f - ring) / 0.9f
-    Box(modifier.size(84.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(56.dp).scale(ring).alpha(ringAlpha).background(Mali.Teal, CircleShape))
-        Box(Modifier.size(70.dp).background(Mali.Teal.copy(alpha = 0.22f), CircleShape))
-        Box(
-            Modifier
-                .size(56.dp)
-                .shadow(8.dp, CircleShape)
-                .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(Mali.Teal, Mali.TealLight)))
-                .clickable(onClick = onClick)
-                .semantics { contentDescription = "My plan: take notes" },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
-        }
+    Box(
+        modifier
+            .size(48.dp)
+            .shadow(6.dp, CircleShape)
+            .clip(CircleShape)
+            .background(Mali.Surface)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "My notes" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(NavIcons.EditSquare, contentDescription = null, tint = Mali.Teal, modifier = Modifier.size(26.dp))
     }
 }
 

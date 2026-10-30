@@ -66,6 +66,7 @@ fun LessonScreen(
     onBack: () -> Unit,
     onOpenLesson: (String) -> Unit,
     onPlan: (String) -> Unit,
+    onInsert: (String, String) -> Unit = { _, _ -> },
 ) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(lessonSlug) { mutableStateOf<LessonState>(LessonState.Loading) }
@@ -125,6 +126,7 @@ fun LessonScreen(
             }
             is LessonState.Ready -> {
                 val readState = androidx.compose.foundation.lazy.rememberLazyListState()
+                SelectToNote(onInsert = { onInsert(s.lesson.title, it) }) {
                 LazyColumn(Modifier.fillMaxSize(), state = readState) {
                     item {
                         Column(
@@ -188,11 +190,12 @@ fun LessonScreen(
                     }
                     item { Spacer(Modifier.height(120.dp)) }
                 }
+                }
                 StatusScrim(readState, accent.copy(alpha = 0.10f).compositeOver(Mali.Surface), Modifier.align(Alignment.TopStart))
                 BackFab(onBack, readState)
                 PlanFab(
                     onClick = { onPlan(s.lesson.title) },
-                    modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(18.dp),
+                    modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 16.dp, bottom = 16.dp),
                 )
             }
         }

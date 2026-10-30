@@ -278,11 +278,12 @@ object NoteStore {
     }
 
     // ------------------------------------------------------------------ create, open, edit
-    fun create(template: String = "", title: String = "", blocks: List<Block> = emptyList(), collection: String = ""): String {
+    fun create(template: String = "", title: String = "", blocks: List<Block> = emptyList(), collection: String = "", ctxKind: String = "", ctxSlug: String = "", ctxTitle: String = ""): String {
         ensureLoaded()
         val n = Note(
             uid = UUID.randomUUID().toString(), title = title,
             blocks = blocks.ifEmpty { listOf(Block()) }, collection = collection, template = template,
+            ctxKind = ctxKind, ctxSlug = ctxSlug, ctxTitle = ctxTitle,
             updatedAt = nowIso(), dirty = true, rev = 1,
         )
         store(n)

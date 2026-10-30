@@ -208,4 +208,19 @@ object NavIcons {
             stroke { moveTo(14f, 8f); lineTo(18f, 12f); lineTo(14f, 16f); moveTo(18f, 12f); horizontalLineTo(9f) }
         }
     }
+
+    /** The notes button: a square with a pen writing in its corner. */
+    val EditSquare: ImageVector by lazy {
+        line("EditSquare") {
+            stroke(1.8f) {
+                moveTo(10.5f, 5f); horizontalLineTo(7f)
+                arcTo(2f, 2f, 0f, false, false, 5f, 7f); verticalLineTo(17f)
+                arcTo(2f, 2f, 0f, false, false, 7f, 19f); horizontalLineTo(17f)
+                arcTo(2f, 2f, 0f, false, false, 19f, 17f); verticalLineTo(13.5f)
+            }
+            stroke(1.8f) {
+                moveTo(16.6f, 4.8f); lineTo(19.2f, 7.4f); lineTo(11.6f, 15f); lineTo(8.8f, 15.4f); lineTo(9.2f, 12.6f); close()
+            }
+        }
+    }
 }

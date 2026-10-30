@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -75,25 +76,12 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
     }
 
     BackHandler(enabled = active && showPlaybooks) { showPlaybooks = false }
+    LaunchedEffect(DiscoverRequest.playbooks) {
+        if (DiscoverRequest.playbooks) { showPlaybooks = true; DiscoverRequest.playbooks = false }
+    }
 
     if (showPlaybooks) {
-        Box(Modifier.fillMaxSize()) {
-            PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
-            Text(
-                "Back to articles",
-                color = Color.White,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(bottom = 18.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Mali.TealDeep)
-                    .clickable { showPlaybooks = false }
-                    .padding(horizontal = 22.dp, vertical = 12.dp),
-            )
-        }
+        PlaybooksScreen(active = active, onOpen = onOpenPlaybook)
         return
     }
 
@@ -131,22 +119,7 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
                     }
                     items(shown, key = { it.slug }) { a -> ArticleCard(a) { onOpenArticle(a.slug) } }
                     item {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Mali.TealTint)
-                                .clickable { showPlaybooks = true }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text("All playbooks", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
-                                Text("Step-by-step guides you can follow today.", fontSize = 13.sp, color = Mali.InkSoft)
-                            }
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Mali.TealDeep)
-                        }
+                        AllPlaybooksCard { showPlaybooks = true }
                         Spacer(Modifier.height(24.dp))
                     }
                 }
@@ -200,9 +173,35 @@ fun ArticleCard(a: ArticleSummary, onOpen: () -> Unit) {
     }
 }
 
-/** The small cards that scroll sideways at the bottom of Home. */
+/** Lets another tab ask Discover to open its playbooks list. */
+object DiscoverRequest {
+    var playbooks by mutableStateOf(false)
+}
+
+/** The soft teal "All playbooks" button. */
 @Composable
-fun FeaturedArticles(list: List<ArticleSummary>, onOpen: (String) -> Unit) {
+fun AllPlaybooksCard(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Mali.TealTint)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("All playbooks", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.TealDeep)
+            Text("Step-by-step guides you can follow today.", fontSize = 13.sp, color = Mali.InkSoft)
+        }
+        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Mali.TealDeep)
+    }
+}
+
+/** The cards that scroll sideways at the bottom of Portfolio, with the playbooks button under them. */
+@Composable
+fun FeaturedArticles(list: List<ArticleSummary>, onOpen: (String) -> Unit, onAllPlaybooks: () -> Unit) {
     Column(Modifier.padding(top = 24.dp)) {
         Text(
             "FEATURED ARTICLES",
@@ -215,20 +214,25 @@ fun FeaturedArticles(list: List<ArticleSummary>, onOpen: (String) -> Unit) {
                 val accent = Mali.accentFor(a.slug)
                 Column(
                     Modifier
-                        .size(width = 250.dp, height = 214.dp)
+                        .width(290.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Mali.Surface)
                         .clickable { onOpen(a.slug) },
                 ) {
                     Box(Modifier.fillMaxWidth().aspectRatio(1200f / 630f)) { CoverImage(a.coverUrl, a.coverAlt, accent, Modifier.fillMaxSize()) }
-                    Column(Modifier.padding(12.dp)) {
-                        Text(a.title, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Spacer(Modifier.height(6.dp))
-                        Text("Read article", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = accent)
+                    Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp)) {
+                        if (a.categoryLabel.isNotBlank()) {
+                            Text(a.categoryLabel.uppercase(), fontSize = 11.sp, letterSpacing = 1.1.sp, fontWeight = FontWeight.ExtraBold, color = accent)
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        Text(a.title, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Read article", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = accent)
                     }
                 }
             }
         }
+        AllPlaybooksCard(onAllPlaybooks)
     }
 }
 
@@ -240,7 +244,14 @@ private sealed interface ReadState {
 
 /** Reads one article, then offers the playbook it leads to. */
 @Composable
-fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpenPlaybook: (String) -> Unit) {
+fun ArticleDetailScreen(
+    slug: String,
+    active: Boolean,
+    onBack: () -> Unit,
+    onOpenPlaybook: (String) -> Unit,
+    onPlan: (String) -> Unit = {},
+    onInsert: (String, String) -> Unit = { _, _ -> },
+) {
     var attempt by remember { mutableIntStateOf(0) }
     var state by remember(slug) { mutableStateOf<ReadState>(ReadState.Loading) }
     val accent = Mali.accentFor(slug)
@@ -272,6 +283,7 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
             }
             is ReadState.Ready -> {
                 val d = s.detail
+                SelectToNote(onInsert = { onInsert(d.summary.title, it) }) {
                 LazyColumn(Modifier.fillMaxSize(), state = readState) {
                     item {
                         if (d.summary.coverUrl != null) {
@@ -331,8 +343,13 @@ fun ArticleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpe
                         Spacer(Modifier.height(48.dp))
                     }
                 }
+                }
                 StatusScrim(readState, Mali.Surface, Modifier.align(Alignment.TopStart))
                 BackFab(onBack, readState)
+                PlanFab(
+                    onClick = { onPlan(d.summary.title) },
+                    modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 16.dp, bottom = 16.dp),
+                )
             }
         }
     }
