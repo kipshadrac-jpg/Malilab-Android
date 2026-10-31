@@ -106,7 +106,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Spacer(Modifier.height(10.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Chip("Module", accent)
-                                if (Billing.status.paywall) Chip(if (owned) "Yours" else "KES ${Billing.status.priceModule}", if (owned) Mali.Green else Mali.Amber)
+                                if (Billing.status.paywall) Chip(if (owned) "Yours" else "Premium", if (owned) Mali.Green else Mali.Amber)
                                 Chip(if (m.lessonCount == 1) "1 lesson" else "${m.lessonCount} lessons", Mali.InkSoft)
                                 if (s.detail.practice.isNotEmpty()) {
                                     Chip(if (s.detail.practice.size == 1) "1 practice" else "${s.detail.practice.size} practice", Mali.InkSoft)
@@ -161,7 +161,7 @@ fun ModuleDetailScreen(slug: String, active: Boolean, onBack: () -> Unit, onOpen
                             Spacer(Modifier.height(18.dp))
                             Text(
                                 when {
-                                    !owned -> "Unlock this module · KES ${Billing.status.priceModule}"
+                                    !owned -> "Unlock Premium · KES ${Billing.status.priceAll}"
                                     finished -> "Review lessons"
                                     doneCount > 0 -> "Continue"
                                     else -> "Start Lesson"

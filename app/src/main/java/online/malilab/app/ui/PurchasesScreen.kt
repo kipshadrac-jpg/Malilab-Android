@@ -127,7 +127,7 @@ fun PurchasesScreen(active: Boolean, onClose: () -> Unit, onBuy: () -> Unit) {
                 }
                 if (h.purchases.isEmpty() && h.granted.isEmpty() && h.allModulesAt == null) {
                     Text(
-                        "You have not bought anything yet. Modules cost KES ${Billing.status.priceModule} each, or KES ${Billing.status.priceAll} for all of them. You pay once and keep them for good, and nothing renews.",
+                        "You have not bought Premium yet. It is KES ${Billing.status.priceAll}, paid once. You keep it for good and nothing is charged again.",
                         fontSize = 16.sp, lineHeight = 23.sp, color = Mali.Ink,
                     )
                     Spacer(Modifier.height(2.dp))

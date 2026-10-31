@@ -183,6 +183,7 @@ object Auth {
                 } catch (e: Exception) {
                     JSONObject()
                 }
+                if (status == 402 && json.optString("error") == "locked") Billing.noteLocked()
                 if (status !in 200..299) {
                     throw ApiError(
                         json.optString("error", "http_$status"),

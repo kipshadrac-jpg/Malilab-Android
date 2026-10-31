@@ -108,7 +108,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
 
             Heading("Profile")
             WhiteCard {
-                SettingRow(NavIcons.Book, "Modules and billing", planLabel()) { if (Billing.status.paywall && !Billing.status.allModules) onOpenPaywall() else onOpenPurchases() }
+                SettingRow(NavIcons.Book, "Premium and billing", planLabel()) { if (Billing.status.paywall && !Billing.status.allModules) onOpenPaywall() else onOpenPurchases() }
                 SettingRow(NavIcons.Receipt, "My purchases", "M-Pesa payments and receipts", onClick = onOpenPurchases)
                 SettingRow(NavIcons.CheckCircle, "My practice", "Your answers and unfinished activities", onClick = onOpenPractice)
             }
@@ -194,9 +194,11 @@ private fun planLabel(): String {
     val st = Billing.status
     return when {
         !st.paywall -> "Everything is open while MaliLab is being tested"
-        st.allModules -> "You have every module"
-        st.trialActive -> "Free plan"
-        else -> "Free plan with ads"
+        st.allModules -> "Premium, for good"
+        st.phase == "free" -> "Free month, ${st.daysLeft} days left"
+        st.phase == "bonus" -> "Bonus month, ${st.daysLeft} days left"
+        st.phase == "member" -> "Member"
+        else -> "Locked until Premium"
     }
 }
 

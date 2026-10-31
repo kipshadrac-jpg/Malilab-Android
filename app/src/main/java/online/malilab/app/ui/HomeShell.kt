@@ -99,6 +99,10 @@ fun HomeShell() {
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { Billing.load() }
+    var bonusNote by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Billing.status.phase, Billing.status.paywall) {
+        if (Billing.bonusUnseen()) bonusNote = true
+    }
 
     val nothingOpen = openPlaybook == null && openArticle == null && openModule == null && lessonSlug == null && studioUid == null &&
         practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen &&
@@ -306,15 +310,15 @@ fun HomeShell() {
             }
         }
         if (paywallOpen) {
-            androidx.compose.runtime.key(paywallSlug) {
-                PaywallScreen(
-                    moduleSlug = paywallSlug,
-                    moduleTitle = paywallTitle,
-                    active = studioUid == null,
-                    onClose = { paywallOpen = false; paywallSlug = null },
-                )
-            }
+            PremiumDialog(
+                moduleNotice = paywallSlug != null,
+                onClose = { paywallOpen = false; paywallSlug = null },
+            )
         }
+        if (bonusNote && !Billing.status.locked) {
+            BonusDialog(onClose = { Billing.markBonusSeen(); bonusNote = false })
+        }
+        LockedGate()
         if (purchasesOpen) {
             PurchasesScreen(
                 active = studioUid == null && !paywallOpen,

@@ -45,23 +45,18 @@ class NoticeItem(val title: String, val body: String, val color: Color, val onOp
 fun noticeItems(onOpenPaywall: () -> Unit, onOpenPlan: (String) -> Unit): List<NoticeItem> {
     val out = mutableListOf<NoticeItem>()
     val st = Billing.status
-    if (st.paywall && !st.allModules) {
-        if (st.trialActive) {
-            val days = ((st.trialSeconds + 86399) / 86400).toInt()
-            val title = when {
-                days <= 0 -> "Your free plan ends today"
-                days == 1 -> "Your free plan ends tomorrow"
-                else -> "Your free plan ends in $days days"
-            }
+    if (st.inFreeWindow && !st.allModules) {
+        val days = st.daysLeft
+        if (st.phase == "free") {
             out += NoticeItem(
-                title,
-                "After that MaliLab is free with ads. Modules are KES ${st.priceModule} each, or KES ${st.priceAll} for all of them. You pay once and keep them.",
+                "Claim your free month",
+                "Everything is open for $days more days, except modules, which are for Premium members. Pay once, keep it for good: KES ${st.priceAll}. There is no subscription and nothing is charged again.",
                 Mali.Amber, onOpenPaywall,
             )
         } else {
             out += NoticeItem(
-                "You are on the free plan",
-                "Free with ads. Unlock a module for KES ${st.priceModule}, or all of them for KES ${st.priceAll}. You pay once and keep them.",
+                "Congratulations. We have awarded you another month.",
+                "Everything stays open for $days more days, except modules. After that MaliLab asks for a one-time KES ${st.priceAll}, and nothing is charged again.",
                 Mali.Amber, onOpenPaywall,
             )
         }

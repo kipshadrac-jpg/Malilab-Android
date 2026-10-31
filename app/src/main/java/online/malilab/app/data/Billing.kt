@@ -16,10 +16,19 @@ data class BillingStatus(
     val allModules: Boolean = false,
     val modules: Set<String> = emptySet(),
     val priceModule: Int = 100,
-    val priceAll: Int = 900,
+    val priceAll: Int = 950,
     val providers: List<String> = listOf("mpesa"),
     val sandbox: Boolean = false,
-)
+    /** free (first month), bonus (second month), locked, member (paid for something), premium. */
+    val phase: String = "premium",
+    val daysLeft: Int = 0,
+) {
+    /** The whole app is closed until Premium is bought. */
+    val locked: Boolean get() = paywall && phase == "locked"
+
+    /** In the free or bonus month: everything is open except modules. */
+    val inFreeWindow: Boolean get() = paywall && (phase == "free" || phase == "bonus")
+}
 
 class Purchase(val id: Int, val status: String, val product: String, val title: String, val amount: Int, val receipt: String, val at: String, val sandbox: Boolean)
 
@@ -68,6 +77,18 @@ object Billing {
 
     fun reset() {
         status = BillingStatus()
+    }
+
+    /** The website answered 402: the free months are over. */
+    fun noteLocked() {
+        if (status.paywall && status.phase != "locked") status = status.copy(phase = "locked", daysLeft = 0)
+    }
+
+    /** True once, the first time the bonus month is seen on this phone. */
+    fun bonusUnseen(): Boolean = status.paywall && status.phase == "bonus" && !prefs.getBoolean("bonus_seen_" + Auth.accountKey, false)
+
+    fun markBonusSeen() {
+        prefs.edit().putBoolean("bonus_seen_" + Auth.accountKey, true).apply()
     }
 
     fun lastPhone(): String = prefs.getString("phone_" + Auth.accountKey, "") ?: ""
@@ -127,9 +148,11 @@ object Billing {
             allModules = o.optBoolean("all_modules"),
             modules = (0 until (mods?.length() ?: 0)).map { mods!!.optString(it) }.toSet(),
             priceModule = prices?.optInt("module", 100) ?: 100,
-            priceAll = prices?.optInt("all", 900) ?: 900,
+            priceAll = prices?.optInt("all", 950) ?: 950,
             providers = if (prov == null) listOf("mpesa") else (0 until prov.length()).map { prov.optString(it) },
             sandbox = o.optBoolean("sandbox"),
+            phase = o.optJSONObject("access")?.optString("phase", "premium")?.ifBlank { "premium" } ?: "premium",
+            daysLeft = o.optJSONObject("access")?.optInt("days_left", 0) ?: 0,
         )
     }
 }
