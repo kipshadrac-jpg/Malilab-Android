@@ -329,8 +329,9 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
                     .mapNotNull { h -> PortfolioEngine.nextOpenDue(h.plan)?.let { d -> h to d } }
                     .sortedBy { it.second }.take(4)
                 if (dues.isNotEmpty()) item {
-                    PfDue(dues, onOpenPlan) { plan ->
-                        PortfolioStore.save(plan.copy(payments = plan.payments + Payment(UUID.randomUUID().toString(), Day.today().iso(), plan.contribution)))
+                    PfDue(dues, onOpenPlan) { plan, due ->
+                        // The payment is dated on the due date it settles, so that date moves forward and the money counts now.
+                        PortfolioStore.save(plan.copy(payments = plan.payments + Payment(UUID.randomUUID().toString(), due.iso(), plan.contribution)))
                         android.widget.Toast.makeText(context, "Recorded " + kes(plan.contribution) + " for " + plan.name, android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -509,7 +510,7 @@ private fun PfIncome(t: PfTotals) {
 
 /** Upcoming top-ups. Tick one when you have paid it: it is logged as a payment and the reminder moves to the next date. */
 @Composable
-private fun PfDue(dues: List<Pair<PfHeld, Day>>, onOpen: (String) -> Unit, onTick: (Plan) -> Unit) {
+private fun PfDue(dues: List<Pair<PfHeld, Day>>, onOpen: (String) -> Unit, onTick: (Plan, Day) -> Unit) {
     Box(Modifier.padding(start = 16.dp, end = 16.dp)) {
         PfCard {
             PfLabel("CONTRIBUTION REMINDERS", Mali.Brown)
@@ -528,9 +529,7 @@ private fun PfDue(dues: List<Pair<PfHeld, Day>>, onOpen: (String) -> Unit, onTic
                         .clickable { onOpen(h.plan.uid) }.padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(v.color), contentAlignment = Alignment.Center) {
-                        Text(h.plan.name.ifBlank { v.title }.take(1).uppercase(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                    }
+                    VehicleBadge(v, 40.dp, filled = true)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(h.plan.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Mali.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -540,7 +539,7 @@ private fun PfDue(dues: List<Pair<PfHeld, Day>>, onOpen: (String) -> Unit, onTic
                     Spacer(Modifier.width(8.dp))
                     Box(
                         Modifier.size(38.dp).clip(CircleShape).background(Mali.OceanTint)
-                            .clickable { onTick(h.plan) }
+                            .clickable { onTick(h.plan, due) }
                             .semantics { contentDescription = "I have paid ${h.plan.name}" },
                         contentAlignment = Alignment.Center,
                     ) { Icon(Icons.Filled.Check, null, tint = Mali.OceanTop, modifier = Modifier.size(20.dp)) }
@@ -560,9 +559,7 @@ private fun PfPlanRow(h: PfHeld, onClick: () -> Unit) {
     val v = h.plan.vehicle
     PfCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(v.color.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                Text(v.title.take(1), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = v.color)
-            }
+            VehicleBadge(v, 44.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(h.plan.name, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -756,9 +753,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                     Vehicles.ALL.forEach { v ->
                         PfCard(onClick = { pick(v) }) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(v.color.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                                    Text(v.title.take(1), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = v.color)
-                                }
+                                VehicleBadge(v, 46.dp)
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(v.title, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
@@ -943,7 +938,8 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
                 PfFact("Pays in", if (plan.contribution > 0 && plan.interval != "once") "${kes(plan.contribution)}, ${intervalWord(plan.interval).lowercase()}" else "One-off")
                 PfFact("Started", Day.parse(plan.startDate)?.pretty() ?: plan.startDate)
                 PfFact("Runs for", PortfolioEngine.label(plan.tenureMonths) + if (st.matured) " (finished)" else "")
-                if (st.nextDue != null && !st.matured) PfFact("Next payment", st.nextDue.pretty())
+                val open = PortfolioEngine.nextOpenDue(plan)
+                if (open != null && !st.matured) PfFact("Next payment", open.pretty())
                 if (plan.contribution > 0 && plan.interval != "once") PfFact("Reminder", if (plan.reminderOn) (if (plan.reminderDaysBefore == 0) "On the day" else "${plan.reminderDaysBefore} day(s) before") + ", " + (if (plan.reminderHour < 12) "${plan.reminderHour} am" else if (plan.reminderHour == 12) "12 noon" else "${plan.reminderHour - 12} pm") else "Off")
                 if (plan.taxPct > 0) PfFact("Tax taken off", "${plainNum(plan.taxPct)}% of interest")
             }

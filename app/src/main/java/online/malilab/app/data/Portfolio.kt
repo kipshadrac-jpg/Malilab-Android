@@ -98,7 +98,7 @@ data class Day(val y: Int, val m: Int, val d: Int) : Comparable<Day> {
     }
 }
 
-// ============================================================================================ the eleven places
+// ============================================================================================ the places to invest
 /**
  * One of the places Kenyans put their money. [taxPct] is only a suggestion taken from KRA and CBK withholding tax
  * guidance (the website's Rules screen has the sources); no vehicle comes with a promised rate.
@@ -148,6 +148,8 @@ object Vehicles {
             "Unit prices move up and down. Equity and balanced funds are not steady like money market funds, so treat the rate as an assumption."),
         Vehicle("banks", "Banks", "Savings and fixed deposits", Color(0xFF5B6B7A), "Bank", "fixed", "Interest rate (% a year)", "reinvest", "monthly", 15.0,
             "Fixed deposits lock a rate for a set time. Ordinary savings rates can change, so log a change if your bank moves it."),
+        Vehicle("business", "Business", "Your own business or side hustle", Color(0xFFD4492A), "Business", "assumed", "Expected return on what you put in (% a year)", "reinvest", "monthly", 0.0,
+            "Money you put into your own business or side hustle. The rate is your own estimate of what it earns you each year, not a promise. Update the value when you know what the business is worth."),
     )
 
     fun get(key: String): Vehicle = ALL.firstOrNull { it.key == key } ?: ALL[0]
@@ -395,11 +397,17 @@ object PortfolioEngine {
                 }
             }
         }
-        // Money the person has ticked off or logged ahead of its due date is not in the schedule yet: count it now.
-        val advance = if (p.useActuals || elapsed >= p.tenureMonths) 0.0 else p.payments.sumOf { pay ->
-            val pd = Day.parse(pay.date)
-            val covers = if (pd != null && pd <= today) nextDue(p, pd) else null
-            if (covers != null && covers > today) pay.amount else 0.0
+        // Money ticked off or logged for a due date the schedule has not reached yet is not in the numbers: count it now.
+        val advance = if (p.useActuals) {
+            p.payments.sumOf { pay -> val pd = Day.parse(pay.date); if (pd != null && pd > today) pay.amount else 0.0 }
+        } else if (elapsed >= p.tenureMonths) {
+            0.0
+        } else {
+            p.payments.sumOf { pay ->
+                val pd = Day.parse(pay.date)
+                val due = if (pd != null && pd >= start) nextDue(p, pd) else null
+                if (due != null && !scheduleCounts(p, due, elapsed)) pay.amount else 0.0
+            }
         }
         return Standing(
             monthsElapsed = elapsed, matured = elapsed >= p.tenureMonths, value = balance + advance, paidIn = last.paid + advance,
@@ -428,21 +436,40 @@ object PortfolioEngine {
         return if (whenDue <= end) whenDue else null
     }
 
+    /** The due date before [d] for this plan's interval. */
+    private fun dueBefore(p: Plan, d: Day): Day = when (p.interval) {
+        "daily" -> d.plusDays(-1)
+        "weekly" -> d.plusDays(-7)
+        else -> d.plusMonths(-(PERIODS[p.interval] ?: 1))
+    }
+
     /**
-     * Like [nextDue], but skips a due date once the person has logged a payment for it (a payment dated inside that
-     * payment's period, even if made early). This is what ticking a reminder does.
+     * Whether the plan's own month-by-month schedule has already counted the top-up due on [due], when [elapsed]
+     * months of the plan have passed. Daily and weekly top-ups are counted as one lump a month.
+     */
+    private fun scheduleCounts(p: Plan, due: Day, elapsed: Int): Boolean {
+        val boundary = p.start.plusMonths(elapsed)
+        return if (p.interval == "daily" || p.interval == "weekly") {
+            if (p.timing == "start") due < boundary else due <= boundary
+        } else {
+            Day.monthsBetween(p.start, due) + (if (p.timing == "start") 1 else 0) <= elapsed
+        }
+    }
+
+    /**
+     * Like [nextDue], but skips a due date once a payment has been logged for it: one dated after the due date before
+     * it and on or before this one. Ticking a reminder logs a payment dated on the due date it settles.
      */
     fun nextOpenDue(p: Plan, today: Day = Day.today()): Day? {
-        val gap = when (p.interval) { "daily" -> 1; "weekly" -> 7; "quarterly" -> 91; "semiannual" -> 182; "annual" -> 365; else -> 30 }
         var d = nextDue(p, today)
         var guard = 0
-        while (d != null && guard < 400) {
+        while (d != null && guard < 800) {
             guard++
             val day: Day = d
-            val lo = day.plusDays(-gap)
+            val before = dueBefore(p, day)
             val paid = p.payments.any { pay ->
                 val pd = Day.parse(pay.date)
-                pd != null && pd > lo && pd <= day
+                pd != null && pd > before && pd <= day
             }
             if (!paid) return day
             d = nextDue(p, day.plusDays(1))
