@@ -395,8 +395,14 @@ object PortfolioEngine {
                 }
             }
         }
+        // Money the person has ticked off or logged ahead of its due date is not in the schedule yet: count it now.
+        val advance = if (p.useActuals || elapsed >= p.tenureMonths) 0.0 else p.payments.sumOf { pay ->
+            val pd = Day.parse(pay.date)
+            val covers = if (pd != null && pd <= today) nextDue(p, pd) else null
+            if (covers != null && covers > today) pay.amount else 0.0
+        }
         return Standing(
-            monthsElapsed = elapsed, matured = elapsed >= p.tenureMonths, value = balance, paidIn = last.paid,
+            monthsElapsed = elapsed, matured = elapsed >= p.tenureMonths, value = balance + advance, paidIn = last.paid + advance,
             gain = balance + last.out - last.paid, modelled = modelled, nextDue = nextDue(p, today),
         )
     }

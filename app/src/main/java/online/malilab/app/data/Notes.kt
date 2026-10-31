@@ -296,6 +296,29 @@ object NoteStore {
         return n.uid
     }
 
+    /**
+     * The one note kept for an article. It is remembered by article, so opening the same article again always finds it;
+     * a fresh one is made only when the person has deleted it.
+     */
+    fun articleNote(slug: String, title: String): String {
+        ensureLoaded()
+        val key = "article_note_" + Auth.accountKey + "_" + slug
+        val gone = tombstones()
+        val name = "Notes: $title".take(200)
+        val known = prefs.getString(key, null)
+        if (known != null && known !in gone && (cache.containsKey(known) || remote.containsKey(known))) return known
+        val found = cache.values.firstOrNull { it.uid !in gone && ((it.ctxKind == "article" && it.ctxSlug == slug) || it.title == name) }?.uid
+            ?: remote.values.firstOrNull { it.uid !in gone && ((it.ctxKind == "article" && it.ctxSlug == slug) || it.title == name) }?.uid
+        if (found != null) {
+            prefs.edit().putString(key, found).apply()
+            return found
+        }
+        val uid = create(title = name, collection = "Learning notes", ctxKind = "article", ctxSlug = slug, ctxTitle = title)
+        prefs.edit().putString(key, uid).apply()
+        pushLater(uid)
+        return uid
+    }
+
     /** The note for a playbook, module or lesson: the person's existing one, or a fresh one. */
     suspend fun forContext(kind: String, slug: String, title: String, legacyText: String = ""): String {
         ensureLoaded()

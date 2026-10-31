@@ -133,10 +133,7 @@ fun HomeShell() {
     // The note kept for a playbook, lesson or article: the person's existing one, or a fresh one.
     suspend fun noteFor(kind: String, slug: String, title: String, legacyKey: String): String {
         if (kind != "article") return NoteStore.forContext(kind, slug, title, Repo.notes(legacyKey))
-        NoteStore.entries.firstOrNull { (it.ctxKind == kind && it.ctxSlug == slug) || it.title == "Notes: $title".take(200) }?.let { return it.uid }
-        val uid = NoteStore.create(title = "Notes: $title".take(200), collection = "Learning notes", ctxKind = kind, ctxSlug = slug, ctxTitle = title)
-        NoteStore.pushLater(uid)
-        return uid
+        return NoteStore.articleNote(slug, title)
     }
 
     // The pen button on a playbook, lesson or article opens the person's own note for it in the Studio.
