@@ -136,7 +136,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                 SettingRow(NavIcons.Info, "About MaliLab", "Version " + versionOf(context)) { showAbout = !showAbout }
                 if (showAbout) {
                     Text(
-                        "MaliLab helps you learn how money works in Kenya and keep track of your savings and investments in one place. Values shown are estimates from the rates you enter.",
+                        "MaliLab helps you learn how money works in Kenya and keep track of your savings and investments in one place. Every value is worked out from the rates you enter.",
                         fontSize = 14.sp, lineHeight = 21.sp, color = Mali.InkSoft,
                         modifier = Modifier.padding(start = 62.dp, end = 16.dp, bottom = 14.dp),
                     )

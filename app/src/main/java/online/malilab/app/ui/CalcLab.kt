@@ -355,7 +355,7 @@ private fun SetUpTab(form: CalcForm, errors: Map<String, String>, netError: Stri
             }
             Text(goal.blurb, fontSize = 14.sp, color = Mali.InkSoft)
             Text(
-                "Example numbers are filled in. Change them to match your situation. Returns, inflation and tax rates are assumptions you choose, not promises.",
+                "Example numbers are filled in. Change them to match your situation.",
                 fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft,
             )
         }
@@ -383,8 +383,8 @@ private fun SetUpTab(form: CalcForm, errors: Map<String, String>, netError: Stri
             NumField(form, "annual_increase", "Raise the amount each year by (%)", e, hint = "For example 5 if your savings grow with your pay.")
         }
 
-        Section("Growth and time", "The return is your assumption. Real investments can earn less, or lose money.") {
-            NumField(form, "annual_return", "Expected yearly return (%)", e, hint = "An assumption you choose.")
+        Section("Growth and time", "Set the return you expect and how long it grows.") {
+            NumField(form, "annual_return", "Expected yearly return (%)", e, hint = "The yearly return you expect.")
             Choice(form, "rate_type", "Rate type", listOf("nominal" to "Nominal", "effective" to "Effective yearly"))
             if (form.get("rate_type") == "nominal") Choice(form, "compounding", "Compounded", COMPOUNDINGS)
             NumField(form, "years", if (goal == Goal.Time) "Look ahead up to (years)" else "For how many years", e)
@@ -402,7 +402,7 @@ private fun SetUpTab(form: CalcForm, errors: Map<String, String>, netError: Stri
             SwitchRow("Tax on growth", form.flags["include_tax"] == true) { form.flags["include_tax"] = it }
             if (form.flags["include_tax"] == true) NumField(form, "tax_on_growth", "Tax on growth (%)", e, hint = "You enter the rate. It is not checked against current tax rules.")
             SwitchRow("Show in today's money (inflation)", form.flags["include_inflation"] == true) { form.flags["include_inflation"] = it }
-            if (form.flags["include_inflation"] == true) NumField(form, "inflation", "Expected yearly inflation (%)", e, hint = "An assumption you choose.")
+            if (form.flags["include_inflation"] == true) NumField(form, "inflation", "Expected yearly inflation (%)", e, hint = "The yearly inflation you expect.")
         }
 
         if (goal.needsWithdrawals) {
@@ -613,7 +613,7 @@ private fun SummaryTab(
             ActionChip("Insert method") { ask("How this was calculated") { m -> listOf(Evidence.methodology(result, m, Evidence.calcInfo(result, inputs, solve))) } }
         }
         Text(
-            "These figures are illustrations based on the assumptions you entered. They are not forecasts, guarantees or financial advice. " +
+            "These figures are worked out from the numbers you entered. " +
                 "Model " + result.optString("model") + " " + result.optString("version") + ".",
             fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft, modifier = Modifier.padding(bottom = 30.dp),
         )
@@ -862,10 +862,10 @@ private fun CompareTab(outcome: CalcOutcome?, effective: JSONObject, ask: (Strin
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            "Change one assumption at a time to see how much it matters. These are what-ifs to learn from, not predictions.",
+            "Change one number at a time to see how much it matters.",
             fontSize = 14.sp, lineHeight = 20.sp, color = Mali.InkSoft,
         )
-        Card("Quick what-ifs", "Each one is an assumption, not a forecast.") {
+        Card("Quick what-ifs", "Each one changes a single number.") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PRESETS.forEach { p ->
                     val overrides = p.make(effective)

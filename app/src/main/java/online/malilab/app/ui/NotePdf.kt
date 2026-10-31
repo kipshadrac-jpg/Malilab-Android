@@ -171,7 +171,7 @@ private class Writer(val note: Note) {
             }
             if (note.blocks.none { !it.isText || it.text.isNotBlank() || it.type == "list" }) text("This note is empty.", paint(10.5f, soft, italic = true))
             y += 10f
-            text("Made with MaliLab. Figures come from the calculators and use the assumptions shown; they are illustrations, not promises or financial advice.", paint(8f, soft, italic = true))
+            text("Made with MaliLab. Figures come from the calculators and use the numbers shown.", paint(8f, soft, italic = true))
             finishPage()
         }
 

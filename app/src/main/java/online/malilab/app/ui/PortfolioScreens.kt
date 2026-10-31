@@ -97,6 +97,18 @@ import online.malilab.app.data.plainNum
 import online.malilab.app.ui.theme.Mali
 import java.util.UUID
 
+/** The ways a rate can be quoted: the label, and how many of those periods make a year. */
+private val RATE_PERIODS = listOf("day" to "a day", "week" to "a week", "month" to "a month", "quarter" to "every 3 months", "half" to "every 6 months", "year" to "a year")
+private val RATE_CHIPS = mapOf("day" to "Daily", "week" to "Weekly", "month" to "Monthly", "quarter" to "Every 3 months", "half" to "Every 6 months", "year" to "Yearly")
+private val RATE_PER_YEAR = mapOf("day" to 365.0, "week" to 52.0, "month" to 12.0, "quarter" to 4.0, "half" to 2.0, "year" to 1.0)
+
+/** A rate quoted per day, week, month and so on, as the equivalent rate over a year (the rate earns on itself each period). */
+private fun yearlyRate(pct: Double, every: String): Double {
+    val n = RATE_PER_YEAR[every] ?: 1.0
+    if (n == 1.0) return pct
+    return Math.round((Math.pow(1.0 + pct / 100.0, n) - 1.0) * 100.0 * 10000.0) / 10000.0
+}
+
 // ============================================================================================ small pieces
 @Composable
 private fun PfPill(text: String, color: Color) {
@@ -481,31 +493,44 @@ private fun PfAllocation(t: PfTotals) {
     }
 }
 
-/** What the plans at your blended rate would pay you each month and year if you stopped paying in and just collected. */
+/** What the portfolio is worth, the average rate on it, and the interest that rate would pay, each with its own explanation. */
 @Composable
 private fun PfIncome(t: PfTotals) {
     Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
         PfCard {
-            PfLabel("INCOME AT YOUR BLENDED RATE", Mali.OceanTop)
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Column(Modifier.weight(1f)) {
-                    Text(kes(t.incomeYear / 12.0), fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Amber)
-                    Text("a month", fontSize = 13.sp, color = Mali.InkSoft)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(kes(t.incomeYear), fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
-                    Text("a year", fontSize = 13.sp, color = Mali.InkSoft)
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                percent(t.blendedRate) + " a year on " + kes(t.value) + ", after any tax you set, if you left it untouched and collected the returns." +
-                    if (t.monthly > 0) " You add about " + kes(t.monthly) + " each month." else "",
-                fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft,
+            PfLabel("WHAT YOUR MONEY EARNS", Mali.OceanTop)
+            PfIncomeRow("Your money today", kes(t.value), "What all your plans are worth right now.")
+            PfIncomeLine()
+            PfIncomeRow("Average rate", percent(t.blendedRate) + " a year", "Your plans' rates averaged together. A plan holding more money counts for more.")
+            PfIncomeLine()
+            PfIncomeRow(
+                "Interest each month", kes(t.incomeYear / 12.0),
+                "That is about " + kes(t.incomeYear) + " a year, if you stopped paying in and left the money alone. Tax you set is taken off.",
+                valueColor = Mali.Amber,
             )
+            if (t.monthly > 0) {
+                PfIncomeLine()
+                PfIncomeRow("You add each month", kes(t.monthly), "Your regular payments across the plans still running, shown as one monthly amount.")
+            }
         }
     }
+}
+
+@Composable
+private fun PfIncomeRow(label: String, value: String, note: String, valueColor: Color = Mali.Ink) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Mali.Ink, modifier = Modifier.weight(1f))
+            Text(value, fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.ExtraBold, color = valueColor)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(note, fontSize = 13.sp, lineHeight = 18.sp, color = Mali.InkSoft)
+    }
+}
+
+@Composable
+private fun PfIncomeLine() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Mali.Sand.copy(alpha = 0.7f)))
 }
 
 /** Upcoming top-ups. Tick one when you have paid it: it is logged as a payment and the reminder moves to the next date. */
@@ -664,6 +689,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
     var rate by remember { mutableStateOf(existing?.let { plainNum(it.ratePct) }.orEmpty()) }
     var years by remember { mutableStateOf(existing?.let { plainNum(it.tenureMonths / 12.0) }.orEmpty()) }
     var basis by remember { mutableStateOf(existing?.rateBasis ?: "nominal") }
+    var rateEvery by remember { mutableStateOf("year") }
     var timing by remember { mutableStateOf(existing?.timing ?: "end") }
     var payout by remember { mutableStateOf(existing?.payout ?: "reinvest") }
     var tax by remember { mutableStateOf(existing?.taxPct?.takeIf { it > 0 }?.let { plainNum(it) }.orEmpty()) }
@@ -686,13 +712,11 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
         category = v.key
         interval = v.interval
         payout = v.payout
-        if (name.isBlank()) name = v.title
         step = 1
     }
 
     fun build(): Plan? {
         problem = ""
-        if (name.isBlank()) { problem = "Give this plan a name."; return null }
         val day = Day.parse(startDate)
         if (day == null) { problem = "Write the start date like 2026-10-25."; return null }
         val ini = if (initial.isBlank()) 0.0 else parseNum(initial)
@@ -700,8 +724,10 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
         if (ini == null || ini < 0) { problem = "The starting amount must be a number."; return null }
         if (con == null || con < 0) { problem = "The regular amount must be a number."; return null }
         if (ini + con <= 0) { problem = "Enter a starting amount, a regular amount, or both."; return null }
-        val r = parseNum(rate)
-        if (r == null || r < 0 || r > 100) { problem = "Enter the rate as a number from 0 to 100."; return null }
+        val typed = parseNum(rate)
+        if (typed == null || typed < 0 || typed > 100) { problem = "Enter the rate as a number from 0 to 100."; return null }
+        val r = yearlyRate(typed, rateEvery)
+        if (r > 100) { problem = "That works out to more than 100% a year. Check the rate and how it is quoted."; return null }
         val y = parseNum(years)
         val months = if (y == null) 0 else Math.round(y * 12).toInt()
         if (months < 1 || months > 720) { problem = "Enter how many years, from 1 month up to 60 years."; return null }
@@ -709,8 +735,8 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
         if (t == null || t < 0 || t > 100) { problem = "Tax must be a number from 0 to 100."; return null }
         val base = existing ?: Plan()
         return base.copy(
-            category = category, name = name.trim().take(120), provider = provider.trim().take(120), startDate = day.iso(),
-            initial = ini, contribution = con, interval = interval, ratePct = r, rateBasis = basis, tenureMonths = months,
+            category = category, name = name.trim().ifBlank { Vehicles.get(category).title }.take(120), provider = provider.trim().take(120), startDate = day.iso(),
+            initial = ini, contribution = con, interval = interval, ratePct = r, rateBasis = if (rateEvery == "year") basis else "effective", tenureMonths = months,
             payout = payout, taxPct = t, timing = timing,
             reminderOn = remind, reminderHour = remindHour, reminderDaysBefore = remindBefore,
         )
@@ -775,7 +801,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                         }
                         Text(vehicle.hint, fontSize = 14.sp, lineHeight = 21.sp, color = Mali.InkSoft)
                     }
-                    PfField("Name of this plan", name, { name = it })
+                    PfField("Name of this plan / goal of this investment", name, { name = it }, hint = "For example: School fees, Emergency fund, Land in Kitengela. Left empty, it is called \"${vehicle.title}\".")
                     PfField("Where it is held (optional)", provider, { provider = it }, hint = "For example the name of your SACCO, fund or bank.")
                     PfField("Start date", startDate, { startDate = it }, hint = "Year-month-day, like 2026-10-25. Use the day the plan began.")
                     PfField("Starting amount (KES)", initial, { initial = it }, number = true, hint = "What you put in on day one. Leave empty if you start with regular payments only.")
@@ -784,7 +810,13 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                         INTERVAL_CHOICES.forEach { (key, word) -> ActionChip(word, selected = interval == key, color = accent) { interval = key } }
                     }
                     if (interval != "once") PfField("Amount each time (KES)", contribution, { contribution = it }, number = true)
-                    PfField(vehicle?.rateLabel ?: "Rate (% a year)", rate, { rate = it }, number = true, hint = "The rate you secured or expect. ${vehicle?.rateKindLabel.orEmpty()}. It is never promised.")
+                    val perWord = RATE_PERIODS.first { it.first == rateEvery }.let { it.second }
+                    val typedRate = parseNum(rate)
+                    PfField(
+                        (vehicle?.rateLabel ?: "Rate (% a year)").replace("% a year", "% $perWord"), rate, { rate = it }, number = true,
+                        hint = "The rate you secured or expect. ${vehicle?.rateKindLabel.orEmpty()}." +
+                            if (rateEvery != "year" && typedRate != null) " That works out to about ${plainNum(Math.round(yearlyRate(typedRate, rateEvery) * 100.0) / 100.0)}% a year." else "",
+                    )
                     PfField("For how many years?", years, { years = it }, number = true, hint = "Use a decimal for part of a year, like 2.5.")
                     if (interval != "once") {
                         PfLabel("PAYMENT REMINDER")
@@ -810,9 +842,14 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                     ActionChip(if (more) "Hide more options" else "More options", color = Mali.TealDeep) { more = !more }
                     if (more) {
                         PfLabel("HOW THE RATE IS QUOTED")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ActionChip("Nominal (12 equal months)", selected = basis == "nominal", color = accent) { basis = "nominal" }
-                            ActionChip("Effective yearly", selected = basis == "effective", color = accent) { basis = "effective" }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            RATE_CHIPS.forEach { (key, word) -> ActionChip(word, selected = rateEvery == key, color = accent) { rateEvery = key } }
+                        }
+                        if (rateEvery == "year") {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ActionChip("Nominal (12 equal months)", selected = basis == "nominal", color = accent) { basis = "nominal" }
+                                ActionChip("Effective yearly", selected = basis == "effective", color = accent) { basis = "effective" }
+                            }
                         }
                         PfLabel("WHEN EACH PAYMENT IS ADDED")
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -844,7 +881,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                         PfCard { PfGrowth(proj.series, accent) }
                         proj.milestones.forEachIndexed { i, m -> PfMilestoneCard(m, i, accent) }
                         PfCard {
-                            PfLabel("ASSUMPTIONS")
+                            PfLabel("HOW THIS IS WORKED OUT")
                             Spacer(Modifier.height(6.dp))
                             proj.notes.forEach { Text("• $it", fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft, modifier = Modifier.padding(vertical = 2.dp)) }
                         }
@@ -925,7 +962,7 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
             Text(kes(st.value), fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
             Text(
                 "Paid in ${kes(st.paidIn)}  ·  " + (if (st.gain >= 0) "Gained " else "Down ") + kes(Math.abs(st.gain)) +
-                    if (st.modelled) "  ·  Estimated from your plan" else "  ·  From the value you entered",
+                    if (st.modelled) "  ·  Worked out from your plan" else "  ·  From the value you entered",
                 fontSize = 13.sp, lineHeight = 18.sp, color = Color.White.copy(alpha = 0.9f),
             )
         }
@@ -985,13 +1022,13 @@ fun PlanDetailScreen(uid: String, active: Boolean, onBack: () -> Unit, onEdit: (
                         selected = plan.useActuals, color = Mali.Green,
                     ) { change(plan.copy(useActuals = !plan.useActuals)) }
                     Text(
-                        "By default the worth assumes every payment was made on time. Turn this on to count only the ones you logged.",
+                        "By default the worth counts every payment as made on time. Turn this on to count only the ones you logged.",
                         fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft, modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }
             PfCard {
-                PfLabel("ASSUMPTIONS")
+                PfLabel("HOW THIS IS WORKED OUT")
                 Spacer(Modifier.height(6.dp))
                 proj.notes.forEach { Text("• $it", fontSize = 13.sp, lineHeight = 19.sp, color = Mali.InkSoft, modifier = Modifier.padding(vertical = 2.dp)) }
             }

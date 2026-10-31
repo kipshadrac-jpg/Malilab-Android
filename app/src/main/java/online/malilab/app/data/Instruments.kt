@@ -70,7 +70,7 @@ val INSTRUMENTS: List<InstrumentSpec> = listOf(
             FieldSpec("initial", "Deposits you already have", "money", default = "0"),
             FieldSpec("contribution", "Monthly deposit", "money", default = "5000"),
             FieldSpec("years", "Years", "number", default = "5"),
-            FieldSpec("dividend_pct", "Dividend rate (% a year)", "number", hint = "What your SACCO paid recently is a fair guess. It is not promised."),
+            FieldSpec("dividend_pct", "Dividend rate (% a year)", "number", hint = "What your SACCO paid recently."),
             FieldSpec("payout", "Dividends are", "choice", listOf("reinvest" to "Added to my deposits", "cash" to "Paid out in cash"), default = "reinvest"),
         ) + TAX_FIELDS,
     ),

@@ -60,7 +60,7 @@ private fun OptionCard(index: Int, opt: CompareOption, errors: Map<String, Strin
             when (opt.kind) {
                 "tbill" -> "Use the latest auction result published by CBK."
                 "mmf" -> "As advertised by the fund."
-                "sacco" -> "What your SACCO paid recently. Not promised."
+                "sacco" -> "What your SACCO paid recently."
                 else -> "The interest rate on the account."
             },
         )
@@ -107,7 +107,7 @@ internal fun CompareSetUp(form: CompareForm, errors: Map<String, String>, netErr
             Text("Each option uses its own sourced tax rule, shown in the Sources tab.", fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft)
         }
         Text(
-            "Every option is calculated with the same amount and time. Rates change, so enter the figure you expect, not a promise.",
+            "Every option is calculated with the same amount and time.",
             fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         )
     }

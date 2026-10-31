@@ -295,7 +295,7 @@ private fun InstrumentSetUp(form: InstrumentForm, errors: Map<String, String>, n
             }
         }
         Text(
-            "Rates and yields change. Enter the figure you expect, not a promise. Nothing here is advice or a guarantee.",
+            "Enter the rate or yield you expect for each option.",
             fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         )
     }
@@ -500,6 +500,6 @@ private fun InstrumentSources(result: JSONObject?, request: (String, (String) ->
             }
         }
         if (rules.length() > 0) InsertButton("Insert the sources into my note") { request("Sources for the rules used") { _ -> InstrumentEvidence.sources(result) } }
-        Text("Rules change with each Finance Act. Check the source before you rely on a rate for a real decision.", fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft)
+        Text("Tax rules come from the sources listed.", fontSize = 12.sp, lineHeight = 17.sp, color = Mali.InkSoft)
     }
 }

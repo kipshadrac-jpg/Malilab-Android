@@ -101,7 +101,7 @@ data class Day(val y: Int, val m: Int, val d: Int) : Comparable<Day> {
 // ============================================================================================ the places to invest
 /**
  * One of the places Kenyans put their money. [taxPct] is only a suggestion taken from KRA and CBK withholding tax
- * guidance (the website's Rules screen has the sources); no vehicle comes with a promised rate.
+ * guidance (the website's Rules screen has the sources); you enter the rate yourself.
  */
 class Vehicle(
     val key: String,
@@ -120,7 +120,7 @@ class Vehicle(
         get() = when (rateKind) {
             "fixed" -> "Fixed when you buy"
             "variable" -> "Changes over time"
-            else -> "Your own assumption"
+            else -> "Your own figure"
         }
 }
 
@@ -129,15 +129,15 @@ object Vehicles {
         Vehicle("tbonds", "Treasury Bonds", "Government securities", Color(0xFF0F9688), "Government", "fixed", "Yield or coupon (% a year)", "income", "once", 15.0,
             "Bonds pay a fixed coupon every six months. Enter the yield you bought at. Choose \"Pay out\" if you spend the coupons, or \"Reinvest\" if you put them back to work. Infrastructure bonds may be taxed differently."),
         Vehicle("sacco", "SACCOs", "Savings and credit cooperatives", Color(0xFF3B4CC0), "Cooperative", "variable", "Dividend or interest on deposits (% a year)", "reinvest", "monthly", 5.0,
-            "Your SACCO decides the dividend each year at its annual meeting. What it paid recently is a fair guess, but it is not promised."),
+            "Your SACCO decides the dividend each year at its annual meeting. Use what it paid recently."),
         Vehicle("mmf", "Money Market Funds", "MMFs", Color(0xFF1F7A4D), "Pooled funds", "variable", "Current yield (% a year)", "reinvest", "monthly", 15.0,
             "Yields change often. Enter today's yield and log changes later. Many funds advertise the yield before tax, so check whether yours is gross or net."),
         Vehicle("pension", "Pension and IPPs", "Pension schemes, individual pension plans", Color(0xFF7A3DB0), "Retirement", "variable", "Expected return (% a year)", "reinvest", "monthly", 0.0,
             "Include your employer's share in the contribution if you want the whole picture. Pension money is usually locked until retirement, so check your scheme's rules."),
         Vehicle("equities", "NSE Stocks", "Equities", Color(0xFFB0285A), "Markets", "assumed", "Expected return (% a year)", "reinvest", "monthly", 0.0,
-            "Share prices rise and fall, and dividends are not fixed. The rate here is your own assumption, not a forecast. Update the value from your broker or CDS statement."),
+            "Share prices rise and fall and dividends change. Enter the return you expect, and update the value from your broker or CDS statement."),
         Vehicle("realestate", "Real Estate and Land", "Property", Color(0xFFB5651D), "Property", "assumed", "Expected yearly growth in value (% a year)", "reinvest", "once", 0.0,
-            "Property is hard to sell quickly and values are estimates. Enter what you paid as the starting amount, then update the value when you know a better figure."),
+            "Property takes time to sell. Enter what you paid as the starting amount, then update the value when you know a better figure."),
         Vehicle("chama", "Chamas", "Investment groups", Color(0xFFD98E04), "Group", "variable", "Yearly return on your share (% a year)", "reinvest", "monthly", 0.0,
             "Use your own monthly contribution and the return your chama's investments have given you. If your chama does merry-go-round only, the rate is 0."),
         Vehicle("insurance", "Insurance Policies", "Education and endowment plans", Color(0xFF2F80C0), "Protection", "fixed", "Effective return on premiums (% a year)", "reinvest", "monthly", 0.0,
@@ -145,11 +145,11 @@ object Vehicles {
         Vehicle("mobile", "Mobile Money Investing", "For example Ziidi MMF", Color(0xFF12B5C4), "Pooled funds", "variable", "Current yield (% a year)", "reinvest", "weekly", 15.0,
             "Small, frequent top-ups from your phone. Yields change, so enter today's figure and update it when it moves."),
         Vehicle("cis", "Unit Trusts (CIS)", "Collective investment schemes", Color(0xFF6FBF4A), "Pooled funds", "assumed", "Expected return (% a year)", "reinvest", "monthly", 0.0,
-            "Unit prices move up and down. Equity and balanced funds are not steady like money market funds, so treat the rate as an assumption."),
+            "Unit prices move up and down. Enter the return you expect."),
         Vehicle("banks", "Banks", "Savings and fixed deposits", Color(0xFF5B6B7A), "Bank", "fixed", "Interest rate (% a year)", "reinvest", "monthly", 15.0,
             "Fixed deposits lock a rate for a set time. Ordinary savings rates can change, so log a change if your bank moves it."),
         Vehicle("business", "Business", "Your own business or side hustle", Color(0xFFD4492A), "Business", "assumed", "Expected return on what you put in (% a year)", "reinvest", "monthly", 0.0,
-            "Money you put into your own business or side hustle. The rate is your own estimate of what it earns you each year, not a promise. Update the value when you know what the business is worth."),
+            "Money you put into your own business or side hustle. Enter what you expect it to earn you each year, and update the value when you know what the business is worth."),
     )
 
     fun get(key: String): Vehicle = ALL.firstOrNull { it.key == key } ?: ALL[0]
@@ -348,11 +348,11 @@ object PortfolioEngine {
 
     fun notes(p: Plan): List<String> {
         val out = ArrayList<String>()
-        out.add("The rate of ${plainNum(p.ratePct)}% a year is the one you entered. It is not a promise.")
+        out.add("The rate of ${plainNum(p.ratePct)}% a year is the one you entered.")
         out.add("Interest is worked out monthly, from a " + if (p.rateBasis == "nominal") "nominal rate (spread over twelve months)." else "yearly effective rate.")
         if (p.interval == "daily" || p.interval == "weekly") out.add("${intervalWord(p.interval)} top-ups are added once a month as their monthly equivalent.")
         if (p.contribution > 0 && p.interval != "once") out.add("Each top-up is added at the " + (if (p.timing == "start") "start" else "end") + " of its period.")
-        if (p.taxPct > 0) out.add("${plainNum(p.taxPct)}% tax is taken off the interest every month.") else out.add("No tax is taken off. Real returns may be lower after tax.")
+        if (p.taxPct > 0) out.add("${plainNum(p.taxPct)}% tax is taken off the interest every month.") else out.add("No tax is taken off.")
         if (p.payout == "income") out.add("Interest is paid out to you and not added back, so the balance stays at what you paid in.")
         if (p.rateChanges.isNotEmpty()) out.add("Rate changes you logged apply from the month they happened.")
         out.add("\"Income if you stop\" is the monthly interest your balance would earn at the rate then, with the money left untouched.")
