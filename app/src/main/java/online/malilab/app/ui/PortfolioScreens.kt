@@ -801,7 +801,7 @@ fun PlanEditorScreen(uid: String?, onClose: () -> Unit, onSaved: (String) -> Uni
                         }
                         Text(vehicle.hint, fontSize = 14.sp, lineHeight = 21.sp, color = Mali.InkSoft)
                     }
-                    PfField("Name of this plan / goal of this investment", name, { name = it }, hint = "For example: School fees, Emergency fund, Land in Kitengela. Left empty, it is called \"${vehicle.title}\".")
+                    PfField("Name of this plan / goal of this investment", name, { name = it }, hint = "For example: School fees, Emergency fund, Land in Kitengela. Left empty, it is called \"${vehicle?.title.orEmpty()}\".")
                     PfField("Where it is held (optional)", provider, { provider = it }, hint = "For example the name of your SACCO, fund or bank.")
                     PfField("Start date", startDate, { startDate = it }, hint = "Year-month-day, like 2026-10-25. Use the day the plan began.")
                     PfField("Starting amount (KES)", initial, { initial = it }, number = true, hint = "What you put in on day one. Leave empty if you start with regular payments only.")
