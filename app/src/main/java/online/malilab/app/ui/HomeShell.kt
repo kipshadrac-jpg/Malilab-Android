@@ -89,6 +89,7 @@ fun HomeShell() {
     var calcSlug by rememberSaveable { mutableStateOf<String?>(null) }
     var calcTitle by rememberSaveable { mutableStateOf("") }
     var paywallOpen by rememberSaveable { mutableStateOf(false) }
+    var calcHomeOpen by rememberSaveable { mutableStateOf(false) }
     var profileOpen by rememberSaveable { mutableStateOf(false) }
     var portfolioUid by rememberSaveable { mutableStateOf<String?>(null) }
     var editorOpen by rememberSaveable { mutableStateOf(false) }
@@ -106,7 +107,7 @@ fun HomeShell() {
 
     val nothingOpen = openPlaybook == null && openArticle == null && openModule == null && lessonSlug == null && studioUid == null &&
         practiceSlug == null && !historyOpen && calcSlug == null && !paywallOpen && !purchasesOpen &&
-        !profileOpen && !notificationsOpen && portfolioUid == null && !editorOpen
+        !profileOpen && !notificationsOpen && portfolioUid == null && !editorOpen && !calcHomeOpen
 
     // Puts new blocks into the note kept for this practice, making the note the first time, and opens it.
     fun addToPracticeNote(slug: String, title: String, blocks: List<Block>) {
@@ -187,6 +188,7 @@ fun HomeShell() {
             onOpenPurchases = { purchasesOpen = true },
             onOpenPlan = { portfolioUid = it },
             onAddPlan = { editorUid = null; editorOpen = true },
+            onOpenCalculator = { calcHomeOpen = true },
         )
         val pid = portfolioUid
         if (pid != null) {
@@ -326,6 +328,7 @@ fun HomeShell() {
                 onBuy = { paywallSlug = null; paywallTitle = ""; paywallOpen = true },
             )
         }
+        if (calcHomeOpen) CalcHome(onClose = { calcHomeOpen = false })
         val cs = calcSlug
         if (cs != null) {
             CalculatorHub(
@@ -362,6 +365,7 @@ private fun MainScaffold(
     onOpenPurchases: () -> Unit,
     onOpenPlan: (String) -> Unit,
     onAddPlan: () -> Unit,
+    onOpenCalculator: () -> Unit,
 ) {
     Scaffold(
         containerColor = Mali.Cream,
@@ -398,7 +402,7 @@ private fun MainScaffold(
         Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (selected) {
-                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenPlaybook = onOpenPlaybook, onOpenArticle = onOpenArticle, onAllPlaybooks = { DiscoverRequest.playbooks = true; onSelect(1) })
+                    0 -> PortfolioHome(active = active, onOpenPlan = onOpenPlan, onAdd = onAddPlan, onOpenCalculator = onOpenCalculator, onOpenPlaybook = onOpenPlaybook, onOpenArticle = onOpenArticle, onAllPlaybooks = { DiscoverRequest.playbooks = true; onSelect(1) })
                     1 -> ArticlesScreen(active = active, onOpenArticle = onOpenArticle, onOpenPlaybook = onOpenPlaybook)
                     2 -> LearnScreen(active = active, onOpen = onOpenModule)
                     else -> PlanScreen(active = active, onOpen = onOpenNote)

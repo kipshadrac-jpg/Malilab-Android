@@ -209,6 +209,24 @@ object NavIcons {
         }
     }
 
+    /** The calculator: a body, a screen and a grid of keys. */
+    val Calculator: ImageVector by lazy {
+        line("Calculator") {
+            stroke(1.8f) {
+                moveTo(7f, 3.8f); horizontalLineTo(17f)
+                arcTo(2f, 2f, 0f, false, true, 19f, 5.8f); verticalLineTo(18.2f)
+                arcTo(2f, 2f, 0f, false, true, 17f, 20.2f); horizontalLineTo(7f)
+                arcTo(2f, 2f, 0f, false, true, 5f, 18.2f); verticalLineTo(5.8f)
+                arcTo(2f, 2f, 0f, false, true, 7f, 3.8f); close()
+            }
+            stroke(1.8f) { moveTo(8f, 7.8f); horizontalLineTo(16f) }
+            stroke(2.2f) {
+                moveTo(8.4f, 12f); horizontalLineTo(8.5f); moveTo(12f, 12f); horizontalLineTo(12.1f); moveTo(15.5f, 12f); horizontalLineTo(15.6f)
+                moveTo(8.4f, 15.6f); horizontalLineTo(8.5f); moveTo(12f, 15.6f); horizontalLineTo(12.1f); moveTo(15.5f, 15.6f); horizontalLineTo(15.6f)
+            }
+        }
+    }
+
     /** The notes button: a square with a pen writing in its corner. */
     val EditSquare: ImageVector by lazy {
         line("EditSquare") {

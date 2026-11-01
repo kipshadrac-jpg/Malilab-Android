@@ -285,7 +285,7 @@ private fun percent(v: Double): String = String.format(java.util.Locale.US, "%.1
 
 // ============================================================================================ the Home tab
 @Composable
-fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenPlaybook: (String) -> Unit, onOpenArticle: (String) -> Unit, onAllPlaybooks: () -> Unit = {}) {
+fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Unit, onOpenCalculator: () -> Unit = {}, onOpenPlaybook: (String) -> Unit, onOpenArticle: (String) -> Unit, onAllPlaybooks: () -> Unit = {}) {
     StatusBarIcons(darkIcons = false, active = active)
     LaunchedEffect(active) { if (active) PortfolioStore.refresh() }
     val plans = PortfolioStore.plans
@@ -361,20 +361,24 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
         }
 
         Row(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(18.dp)
-                .shadow(8.dp, RoundedCornerShape(50))
-                .clip(RoundedCornerShape(50))
-                .background(Brush.linearGradient(listOf(Mali.OceanTop, Mali.OceanBottom)))
-                .clickable(onClick = onAdd)
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(Icons.Filled.Add, null, tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("Add plan", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+            Row(
+                Modifier
+                    .shadow(8.dp, RoundedCornerShape(50))
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White)
+                    .clickable(onClick = onOpenCalculator)
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(NavIcons.Calculator, null, tint = Mali.OceanBottom, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Calculator", color = Mali.Ink, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+            }
+            PlusButton(onClick = onAdd)
         }
     }
 }

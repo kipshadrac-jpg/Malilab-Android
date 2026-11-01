@@ -7,6 +7,7 @@ import coil.ImageLoaderFactory
 import coil.decode.SvgDecoder
 import online.malilab.app.data.Auth
 import online.malilab.app.data.Billing
+import online.malilab.app.data.CalcStore
 import online.malilab.app.data.NoteStore
 import online.malilab.app.data.PortfolioStore
 import online.malilab.app.data.PracticeStore
@@ -22,6 +23,7 @@ class MaliApp : Application(), ImageLoaderFactory {
         NoteStore.init(this)
         PracticeStore.init(this)
         PortfolioStore.init(this)
+        CalcStore.init(this)
         Reminders.schedule(this)
         Billing.init(this)
         Mali.init(this)

@@ -70,21 +70,37 @@ private val INSTRUMENT_TABS = listOf("Set up", "Results", "Graph", "Table", "Sou
 
 /** The calculator, with a row at the top to choose what is being calculated: savings, or one of the Kenyan instruments. */
 @Composable
-fun CalculatorHub(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit) {
+fun CalculatorHub(
+    seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit,
+    name: String? = null, onName: (String) -> Unit = {}, onState: ((String, JSONObject, String?) -> Unit)? = null,
+) {
     var model by remember { mutableStateOf(seed?.model ?: LabMemory.model) }
     val picker: @Composable () -> Unit = {
-        Row(
-            Modifier.fillMaxWidth().background(Mali.TealTint).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PICKER.forEach { (m, title) -> ActionChip(title, selected = model == m) { model = m; LabMemory.model = m } }
+        Column {
+            if (name != null) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = name,
+                    onValueChange = { onName(it.take(80)) },
+                    label = { androidx.compose.material3.Text("Name of this portfolio") },
+                    placeholder = { androidx.compose.material3.Text("e.g. Sacco savings") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().background(Mali.Surface).padding(horizontal = 10.dp, vertical = 8.dp),
+                    colors = fieldColors(),
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth().background(Mali.TealTint).horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PICKER.forEach { (m, title) -> ActionChip(title, selected = model == m) { model = m; LabMemory.model = m } }
+            }
         }
     }
     key(model) {
         if (model == "compound") {
-            CalculatorLab(seed?.takeIf { it.model == "compound" }, onInsert, onClose, header = picker)
+            CalculatorLab(seed?.takeIf { it.model == "compound" }, onInsert, onClose, header = picker, onState = onState)
         } else {
-            InstrumentLab(model, seed?.takeIf { it.model == model }?.inputs, onInsert, onClose, picker)
+            InstrumentLab(model, seed?.takeIf { it.model == model }?.inputs, onInsert, onClose, picker, onState)
         }
     }
 }
@@ -93,7 +109,7 @@ private class InstrumentInsert(val title: String, val build: (String) -> List<Bl
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit) {
+fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit, onState: ((String, JSONObject, String?) -> Unit)? = null) {
     val spec = instrumentSpec(model)
     val form: LabForm = remember(model) {
         val f: LabForm = if (model == "compare") CompareForm() else InstrumentForm(spec)
@@ -123,6 +139,7 @@ fun InstrumentLab(model: String, seedInputs: JSONObject?, onInsert: (List<Block>
             errors = emptyMap()
             netError = null
             LabMemory.instruments[model] = inputs
+            onState?.invoke(model, inputs, null)
         } catch (e: ApiError) {
             if (e.code == "invalid_inputs") {
                 errors = CalcApi.fieldErrors(e)

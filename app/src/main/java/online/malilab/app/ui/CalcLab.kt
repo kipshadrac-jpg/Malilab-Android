@@ -93,7 +93,7 @@ private val TABS = listOf("Set up", "Summary", "Graph", "Table", "Compare", "Ana
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit = {}) {
+fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () -> Unit, header: @Composable () -> Unit = {}, onState: ((String, JSONObject, String?) -> Unit)? = null) {
     val context = LocalContext.current
     val form = remember {
         CalcForm().also { f ->
@@ -126,6 +126,7 @@ fun CalculatorLab(seed: CalcSeed?, onInsert: (List<Block>) -> Unit, onClose: () 
             netError = null
             LabMemory.inputs = inputs
             LabMemory.solve = solve
+            onState?.invoke("compound", inputs, solve)
         } catch (e: ApiError) {
             if (e.code == "invalid_inputs") {
                 errors = CalcApi.fieldErrors(e)
