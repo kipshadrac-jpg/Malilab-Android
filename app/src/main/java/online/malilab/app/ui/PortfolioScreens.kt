@@ -361,7 +361,7 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
         }
 
         Row(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(18.dp),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -369,7 +369,8 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
                 Modifier
                     .shadow(8.dp, RoundedCornerShape(50))
                     .clip(RoundedCornerShape(50))
-                    .background(Color.White)
+                    .background(Mali.Cream)
+                    .border(1.dp, Mali.Sand, RoundedCornerShape(50))
                     .clickable(onClick = onOpenCalculator)
                     .padding(horizontal = 18.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,

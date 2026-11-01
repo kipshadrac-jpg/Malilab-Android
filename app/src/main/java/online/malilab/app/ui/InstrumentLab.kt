@@ -83,6 +83,7 @@ fun CalculatorHub(
                     onValueChange = { onName(it.take(80)) },
                     label = { androidx.compose.material3.Text("Name of this portfolio") },
                     placeholder = { androidx.compose.material3.Text("e.g. Sacco savings") },
+                    supportingText = if (name.isBlank()) ({ androidx.compose.material3.Text("Give it a name to keep it in your calculator.") }) else null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().background(Mali.Surface).padding(horizontal = 10.dp, vertical = 8.dp),
                     colors = fieldColors(),
@@ -96,11 +97,18 @@ fun CalculatorHub(
             }
         }
     }
-    key(model) {
-        if (model == "compound") {
-            CalculatorLab(seed?.takeIf { it.model == "compound" }, onInsert, onClose, header = picker, onState = onState)
-        } else {
-            InstrumentLab(model, seed?.takeIf { it.model == model }?.inputs, onInsert, onClose, picker, onState)
+    // Every entry box in the calculator has rounded corners.
+    androidx.compose.material3.MaterialTheme(
+        colorScheme = androidx.compose.material3.MaterialTheme.colorScheme,
+        typography = androidx.compose.material3.MaterialTheme.typography,
+        shapes = androidx.compose.material3.MaterialTheme.shapes.copy(extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
+    ) {
+        key(model) {
+            if (model == "compound") {
+                CalculatorLab(seed?.takeIf { it.model == "compound" }, onInsert, onClose, header = picker, onState = onState)
+            } else {
+                InstrumentLab(model, seed?.takeIf { it.model == model }?.inputs, onInsert, onClose, picker, onState)
+            }
         }
     }
 }

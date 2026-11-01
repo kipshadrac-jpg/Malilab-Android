@@ -10,6 +10,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +67,7 @@ import online.malilab.app.ui.theme.Mali
 private const val FAVOURITES = "★ Favourites"
 
 /** The Plan tab: every note the person has written, with search, collections and a button to start a new one. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
     StatusBarIcons(darkIcons = false, active = active)
@@ -67,6 +75,12 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
     var filter by remember { mutableStateOf("") }
     var picker by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var selecting by remember { mutableStateOf(false) }
+    var picked by remember { mutableStateOf(setOf<String>()) }
+    var pressed by remember { mutableStateOf<NoteEntry?>(null) }      // the note whose long-press menu is open
+    var confirmDelete by remember { mutableStateOf(false) }
+    BackHandler(enabled = active && selecting) { selecting = false; picked = emptySet() }
 
     LaunchedEffect(active) { if (active) NoteStore.refresh() }
 
@@ -158,27 +172,95 @@ fun PlanScreen(active: Boolean, onOpen: (String) -> Unit) {
                 }
             } else {
                 items(shown, key = { it.uid }) { e ->
-                    NoteCard(e) { onOpen(e.uid) }
+                    NoteCard(
+                        e, selecting = selecting, picked = e.uid in picked,
+                        onLongClick = { if (!selecting) pressed = e },
+                    ) {
+                        if (selecting) {
+                            picked = if (e.uid in picked) picked - e.uid else picked + e.uid
+                        } else {
+                            onOpen(e.uid)
+                        }
+                    }
                 }
             }
             item { Spacer(Modifier.height(120.dp)) }
         }
 
-        Row(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-                .padding(18.dp)
-                .shadow(8.dp, RoundedCornerShape(50))
-                .clip(RoundedCornerShape(50))
-                .background(Brush.linearGradient(listOf(Mali.Teal, Mali.TealLight)))
-                .clickable { picker = true }
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Add, null, tint = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Text("New note", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+        if (selecting) {
+            Row(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Mali.Surface).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Cancel", color = Mali.InkSoft, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).clickable { selecting = false; picked = emptySet() }.padding(horizontal = 14.dp, vertical = 10.dp),
+                )
+                Text(
+                    if (picked.isEmpty()) "Tap notes to select" else "${picked.size} selected",
+                    color = Mali.Ink, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                Text(
+                    "Delete", color = if (picked.isEmpty()) Mali.InkSoft else Mali.Pink, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).clickable(enabled = picked.isNotEmpty()) { confirmDelete = true }.padding(horizontal = 14.dp, vertical = 10.dp),
+                )
+            }
+        } else {
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(18.dp)
+                    .size(64.dp)
+                    .shadow(8.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Mali.Surface)
+                    .clickable { picker = true }
+                    .semantics { contentDescription = "New note" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(NavIcons.EditSquare, null, tint = Mali.Teal, modifier = Modifier.size(34.dp))
+            }
+        }
+
+        pressed?.let { n ->
+            AlertDialog(
+                onDismissRequest = { pressed = null },
+                containerColor = Mali.Cream,
+                title = { Text(n.title.ifBlank { "Untitled note" }, fontWeight = FontWeight.ExtraBold, color = Mali.Ink, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                text = {
+                    Column {
+                        Text(
+                            "Delete", color = Mali.Pink, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { picked = setOf(n.uid); pressed = null; confirmDelete = true }.padding(vertical = 12.dp, horizontal = 8.dp),
+                        )
+                        Text(
+                            "Select multiple", color = Mali.Ink, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { selecting = true; picked = setOf(n.uid); pressed = null }.padding(vertical = 12.dp, horizontal = 8.dp),
+                        )
+                    }
+                },
+                confirmButton = {},
+                dismissButton = { TextButton(onClick = { pressed = null }) { Text("Cancel", color = Mali.InkSoft) } },
+            )
+        }
+        if (confirmDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmDelete = false; if (!selecting) picked = emptySet() },
+                containerColor = Mali.Cream,
+                title = { Text(if (picked.size == 1) "Delete this note?" else "Delete ${picked.size} notes?", fontWeight = FontWeight.ExtraBold, color = Mali.Ink) },
+                text = { Text("This cannot be undone.", color = Mali.Ink) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val gone = picked
+                        confirmDelete = false
+                        selecting = false
+                        picked = emptySet()
+                        scope.launch { gone.forEach { NoteStore.delete(it) } }
+                    }) { Text("Delete", color = Mali.Pink, fontWeight = FontWeight.ExtraBold) }
+                },
+                dismissButton = { TextButton(onClick = { confirmDelete = false; if (!selecting) picked = emptySet() }) { Text("Keep", color = Mali.InkSoft) } },
+            )
         }
 
         if (picker) {
@@ -222,8 +304,9 @@ private fun EmptyPlan(hasNotes: Boolean, onNew: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun NoteCard(e: NoteEntry, onClick: () -> Unit) {
+private fun NoteCard(e: NoteEntry, selecting: Boolean, picked: Boolean, onLongClick: () -> Unit, onClick: () -> Unit) {
     val accent = Mali.accentFor(e.collection.ifBlank { e.uid })
     val shape = RoundedCornerShape(12.dp)
     Column(
@@ -233,11 +316,17 @@ private fun NoteCard(e: NoteEntry, onClick: () -> Unit) {
             .clip(shape)
             .background(Mali.Surface)
             .background(accent.copy(alpha = 0.10f))
-            .border(1.dp, accent.copy(alpha = 0.40f), shape)
-            .clickable(onClick = onClick)
+            .border(if (picked) 2.dp else 1.dp, if (picked) Mali.Teal else accent.copy(alpha = 0.40f), shape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (selecting) {
+                Box(
+                    Modifier.padding(end = 10.dp).size(22.dp).clip(CircleShape).background(if (picked) Mali.Teal else Mali.Sand),
+                    contentAlignment = Alignment.Center,
+                ) { if (picked) Text("✓", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold) }
+            }
             Text(
                 e.title.ifBlank { "Untitled note" },
                 fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink,

@@ -103,7 +103,7 @@ fun CalcHome(onClose: () -> Unit) {
                     Text("Nothing saved yet", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Mali.Ink)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Tap + to start a calculation. Give it a name and it is kept here, so you can come back and change it any time.",
+                        "Tap + to start a calculation. Give it a name and it is kept here, so you can come back and change it any time. Calculations without a name are not kept.",
                         fontSize = 15.sp, lineHeight = 21.sp, color = Mali.InkSoft,
                     )
                 }
@@ -191,7 +191,8 @@ private fun CalcEditor(id: String, fresh: Boolean, onClose: () -> Unit) {
 
     fun keep(c: SavedCalc) {
         cur = c
-        if (c.name.isNotBlank() || c.inputs.length() > 0) CalcStore.upsert(c.copy(updatedAt = System.currentTimeMillis()))
+        // Only a calculation with a name is kept; take the name away and it is removed from the list.
+        if (c.name.isNotBlank()) CalcStore.upsert(c.copy(updatedAt = System.currentTimeMillis())) else CalcStore.delete(c.id)
     }
 
     CalculatorHub(
