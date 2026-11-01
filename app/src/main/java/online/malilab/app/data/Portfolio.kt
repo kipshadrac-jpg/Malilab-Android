@@ -505,13 +505,17 @@ object PortfolioStore {
     private lateinit var root: File
     private lateinit var prefs: SharedPreferences
     private val lock = Mutex()
-    private val cache = LinkedHashMap<String, Plan>()
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, Plan>()
     private var cacheOwner = ""
 
     var plans by mutableStateOf<List<Plan>>(emptyList())
         private set
 
     var online by mutableStateOf(true)
+        private set
+
+    /** False until the first check with the account has finished (or failed) since the app opened, so a loading look can show. */
+    var settled by mutableStateOf(false)
         private set
 
     fun init(context: Context) {
@@ -524,6 +528,7 @@ object PortfolioStore {
     private fun tombstones(): Set<String> = prefs.getStringSet(tombKey(), emptySet()) ?: emptySet()
     private fun setTombstones(s: Set<String>) = prefs.edit().putStringSet(tombKey(), s).apply()
 
+    @Synchronized
     private fun ensureLoaded() {
         val owner = Auth.accountKey
         if (owner == cacheOwner) return
@@ -544,6 +549,7 @@ object PortfolioStore {
     fun reset() {
         cacheOwner = ""
         plans = emptyList()
+        settled = false
     }
 
     private fun rebuild() {
@@ -623,6 +629,10 @@ object PortfolioStore {
         } catch (e: ApiError) {
             if (e.status == 0) online = false
             false
+        } catch (e: org.json.JSONException) {
+            false
+        } finally {
+            settled = true
         }
     }
 

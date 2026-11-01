@@ -23,6 +23,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT))
         val prefs = getSharedPreferences("malilab", MODE_PRIVATE)
         setContent {
+            // The MALILAB name in the window background is only for the moment before this screen is ready.
+            androidx.compose.runtime.SideEffect { window.setBackgroundDrawableResource(R.color.cream) }
             MaliLabTheme {
                 var onboarded by remember { mutableStateOf(prefs.getBoolean("onboarded", false)) }
                 if (onboarded) {

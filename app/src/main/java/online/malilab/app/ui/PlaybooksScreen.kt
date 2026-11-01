@@ -121,7 +121,7 @@ fun PlaybooksScreen(active: Boolean, onOpen: (String) -> Unit) {
                             onAction = { attempt++ },
                         )
                     }
-                    items(s.items, key = { it.slug }) { p ->
+                    items(s.items.distinctBy { it.slug }, key = { it.slug }) { p ->
                         PlaybookCard(p) { onOpen(p.slug) }
                     }
                 }

@@ -40,6 +40,16 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import online.malilab.app.ui.theme.Mali
 
+/** Opens another app, and says nothing instead of crashing when the phone has no app for it. */
+fun safeStart(context: android.content.Context, intent: android.content.Intent): Boolean =
+    try {
+        context.startActivity(intent)
+        true
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(context, "No app on this phone can open that.", android.widget.Toast.LENGTH_SHORT).show()
+        false
+    }
+
 /** Dark or light clock/battery icons in the phone's status bar, to stay readable on what is behind them. */
 @Composable
 fun StatusBarIcons(darkIcons: Boolean, active: Boolean = true) {

@@ -290,6 +290,11 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
     LaunchedEffect(active) { if (active) PortfolioStore.refresh() }
     val plans = PortfolioStore.plans
     val totals = remember(plans) { totalsOf(plans) }
+    // The first time the portfolio opens after the app starts, placeholders show until the account has answered
+    // (or for a few seconds at most), so the person never sees an out-of-date or empty screen first.
+    var waited by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(7000); waited = true }
+    val loading = !PortfolioStore.settled && !waited
     val context = LocalContext.current
     val askLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { Reminders.runNow(context) }
     LaunchedEffect(plans) {
@@ -325,14 +330,16 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
 
     Box(Modifier.fillMaxSize().background(Mali.Cream)) {
         LazyColumn(Modifier.fillMaxSize()) {
-            item { PfHeader(totals, empty = plans.isEmpty()) }
+            item { PfHeader(totals, empty = plans.isEmpty(), loading = loading) }
             if (!PortfolioStore.online) item {
                 Text(
                     "Offline. Showing the plans saved on this phone; changes are sent when you are back online.",
                     fontSize = 13.sp, lineHeight = 18.sp, color = Mali.Amber, modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 0.dp),
                 )
             }
-            if (plans.isEmpty()) {
+            if (loading) {
+                item { PortfolioSkeleton() }
+            } else if (plans.isEmpty()) {
                 item { PfEmpty(onAdd) }
             } else {
                 item { PfAllocation(totals) }
@@ -385,7 +392,7 @@ fun PortfolioHome(active: Boolean, onOpenPlan: (String) -> Unit, onAdd: () -> Un
 }
 
 @Composable
-private fun PfHeader(t: PfTotals, empty: Boolean) {
+private fun PfHeader(t: PfTotals, empty: Boolean, loading: Boolean = false) {
     // The card keeps its old height and grows downward: the extra 30dp is the curved edge, like a bank balance card.
     Column(
         Modifier
@@ -410,8 +417,18 @@ private fun PfHeader(t: PfTotals, empty: Boolean) {
         }
         Spacer(Modifier.height(18.dp))
         Text("WORTH TODAY", fontSize = 12.sp, letterSpacing = 1.4.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.8f))
+        if (loading) {
+            Spacer(Modifier.height(6.dp))
+            SkelBar(30.dp, width = 210.dp, radius = 10.dp, onColour = true)
+            Spacer(Modifier.height(10.dp))
+            SkelBar(13.dp, width = 260.dp, onColour = true)
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                repeat(3) { SkelBar(50.dp, modifier = Modifier.weight(1f), radius = 14.dp, onColour = true) }
+            }
+        } else
         Text(kes(t.value), fontSize = 34.sp, lineHeight = 40.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-        if (!empty) {
+        if (!empty && !loading) {
             val n = t.held.size
             Text(
                 "across $n plan" + (if (n == 1) "" else "s") + " · grows to " + shortKes(t.matures) + " by the end",
@@ -624,7 +641,7 @@ private fun PfFeatured(list: List<PlaybookSummary>, onOpen: (String) -> Unit) {
         Box(Modifier.padding(horizontal = 16.dp)) { PfLabel("FEATURED") }
         Spacer(Modifier.height(10.dp))
         LazyRow(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(list, key = { it.slug }) { p ->
+            items(list.distinctBy { it.slug }, key = { it.slug }) { p ->
                 val accent = Mali.accentFor(p.slug)
                 Column(
                     Modifier

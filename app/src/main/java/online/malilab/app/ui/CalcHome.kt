@@ -192,7 +192,7 @@ private fun CalcEditor(id: String, fresh: Boolean, onClose: () -> Unit) {
     fun keep(c: SavedCalc) {
         cur = c
         // Only a calculation with a name is kept; take the name away and it is removed from the list.
-        if (c.name.isNotBlank()) CalcStore.upsert(c.copy(updatedAt = System.currentTimeMillis())) else CalcStore.delete(c.id)
+        if (c.name.isNotBlank()) CalcStore.upsert(c.copy(updatedAt = System.currentTimeMillis())) else if (CalcStore.get(c.id) != null) CalcStore.delete(c.id)
     }
 
     CalculatorHub(

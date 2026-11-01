@@ -96,7 +96,7 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
                     MessageBlock("No connection", s.message, "Try again") { attempt++ }
                 }
                 is FeedState.Ready -> {
-                    val cats = s.items.map { it.category to it.categoryLabel }.distinct().filter { it.first.isNotBlank() }
+                    val cats = s.items.map { it.category to it.categoryLabel }.distinctBy { it.first }.filter { it.first.isNotBlank() }
                     if (cats.size > 1) item {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -117,7 +117,7 @@ fun ArticlesScreen(active: Boolean, onOpenArticle: (String) -> Unit, onOpenPlayb
                     if (shown.isEmpty()) item {
                         MessageBlock("No articles yet", "New articles appear here as soon as they are published.", "Refresh") { attempt++ }
                     }
-                    items(shown, key = { it.slug }) { a -> ArticleCard(a) { onOpenArticle(a.slug) } }
+                    items(shown.distinctBy { it.slug }, key = { it.slug }) { a -> ArticleCard(a) { onOpenArticle(a.slug) } }
                     item {
                         AllPlaybooksCard { showPlaybooks = true }
                         Spacer(Modifier.height(24.dp))
@@ -210,7 +210,7 @@ fun FeaturedArticles(list: List<ArticleSummary>, onOpen: (String) -> Unit, onAll
         )
         Spacer(Modifier.height(10.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(list, key = { it.slug }) { a ->
+            items(list.distinctBy { it.slug }, key = { it.slug }) { a ->
                 val accent = Mali.accentFor(a.slug)
                 Column(
                     Modifier

@@ -54,7 +54,7 @@ class SubmitOutcome(val ok: Boolean, val errors: Map<String, String>, val messag
 object PracticeStore {
     private lateinit var prefs: SharedPreferences
     private val drafts = HashMap<String, Draft>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + kotlinx.coroutines.CoroutineExceptionHandler { _, _ -> /* a failed background save is tried again later */ })
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("malilab_practice", Context.MODE_PRIVATE)

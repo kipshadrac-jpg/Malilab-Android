@@ -441,7 +441,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                                     putExtra(Intent.EXTRA_SUBJECT, doc?.title.orEmpty())
                                     putExtra(Intent.EXTRA_TEXT, md)
                                 }
-                                context.startActivity(Intent.createChooser(send, "Share note"))
+                                safeStart(context, Intent.createChooser(send, "Share note"))
                             } catch (e: ApiError) {
                                 message = if (e.status == 0) "Connect to the internet to export this note." else e.message
                             }
@@ -504,7 +504,7 @@ fun StudioScreen(uid: String, onClose: () -> Unit, onSwitch: (String) -> Unit) {
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
                         )
                     }
-                    items(d.blocks, key = { it.id }) { b ->
+                    items(d.blocks.distinctBy { it.id }, key = { it.id }) { b ->
                         val i = d.blocks.indexOfFirst { it.id == b.id }
                         NoteBlockView(
                             block = b,

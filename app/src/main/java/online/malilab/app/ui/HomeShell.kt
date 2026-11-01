@@ -100,6 +100,15 @@ fun HomeShell() {
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { Billing.load() }
+    // Coming back to the app (after paying in the M-Pesa menu, say) asks the website again where the account stands.
+    val owner = androidx.compose.ui.platform.LocalContext.current as? androidx.activity.ComponentActivity
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) scope.launch { Billing.load() }
+        }
+        owner?.lifecycle?.addObserver(observer)
+        onDispose { owner?.lifecycle?.removeObserver(observer) }
+    }
     var bonusNote by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Billing.status.phase, Billing.status.paywall) {
         if (Billing.bonusUnseen()) bonusNote = true
@@ -320,7 +329,6 @@ fun HomeShell() {
         if (bonusNote && !Billing.status.locked) {
             BonusDialog(onClose = { Billing.markBonusSeen(); bonusNote = false })
         }
-        LockedGate()
         if (purchasesOpen) {
             PurchasesScreen(
                 active = studioUid == null && !paywallOpen,
@@ -347,6 +355,8 @@ fun HomeShell() {
                 )
             }
         }
+        // Last, so nothing can sit on top of the lock.
+        LockedGate()
     }
     }
 }

@@ -116,11 +116,15 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
             Heading("Settings")
             WhiteCard {
                 SettingRow(NavIcons.Bell, "Payment reminders", if (Reminders.canNotify(context)) "On" else "Off. Tap to allow") {
-                    context.startActivity(
+                    val ok = safeStart(
+                        context,
                         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
+                    if (!ok) {
+                        safeStart(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
                 }
                 SettingRow(NavIcons.Sliders, "Appearance", if (Mali.dark) "Dark" else "Light") { showLook = !showLook }
                 if (showLook) {
@@ -142,7 +146,7 @@ fun MeScreen(active: Boolean, onOpenPractice: () -> Unit = {}, onOpenPaywall: ()
                     )
                 }
                 SettingRow(NavIcons.Compass, "Visit malilab.online", "Read more on the website") {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://malilab.online")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    safeStart(context, Intent(Intent.ACTION_VIEW, Uri.parse("https://malilab.online")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
 

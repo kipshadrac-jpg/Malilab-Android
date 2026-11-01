@@ -784,7 +784,7 @@ private fun TableTab(outcome: CalcOutcome?, inputs: JSONObject, solve: String?, 
                 ActionChip("Share as CSV") {
                     val csv = (listOf(header) + chosen.map { it.second }).joinToString("\n") { r -> r.joinToString(",") { "\"" + it.replace(",", "") + "\"" } }
                     val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "MaliLab table.csv"); putExtra(Intent.EXTRA_TEXT, csv) }
-                    context.startActivity(Intent.createChooser(send, "Share table"))
+                    safeStart(context, Intent.createChooser(send, "Share table"))
                 }
                 ActionChip(if (excluded.isEmpty()) "Clear all" else "Select all") { excluded = if (excluded.isEmpty()) rows.map { it.first }.toSet() else emptySet() }
             }

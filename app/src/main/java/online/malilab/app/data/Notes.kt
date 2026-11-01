@@ -123,7 +123,7 @@ object NoteStore {
     private lateinit var root: File
     private lateinit var prefs: SharedPreferences
     private val lock = Mutex()
-    private val cache = mutableMapOf<String, Note>()
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, Note>()
     private var cacheOwner = ""
     private var remote: Map<String, NoteEntry> = emptyMap()
 
@@ -142,6 +142,7 @@ object NoteStore {
     private fun dir(): File = File(root, Auth.accountKey.ifBlank { "guest" }).also { it.mkdirs() }
     private fun tombKey() = "deleted_" + Auth.accountKey
 
+    @Synchronized
     private fun ensureLoaded() {
         val owner = Auth.accountKey
         if (owner == cacheOwner) return
@@ -397,7 +398,7 @@ object NoteStore {
         return saved
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + kotlinx.coroutines.CoroutineExceptionHandler { _, _ -> /* a failed background send is tried again later */ })
 
     /** Sends a note in the background, for when its editor has just been closed. */
     fun pushLater(uid: String) {
@@ -479,11 +480,11 @@ object NoteStore {
         ensureLoaded()
         val n = cache[uid]
         forget(uid)
-        if (n != null && n.version > 0) {
-            setTombstones(tombstones() + uid)
-            pushDelete(uid)
-        }
-        rebuild()
+        // A note that was never opened on this phone is known only to the website (n is null): it must be deleted there too.
+        val onWebsite = n == null || n.version > 0
+        if (onWebsite) setTombstones(tombstones() + uid)
+        rebuild()                 // it leaves the list at once; the website is told right after
+        if (onWebsite) pushDelete(uid)
     }
 
     fun duplicate(uid: String): String? {

@@ -112,7 +112,7 @@ object Billing {
             prefs.edit().putString(key(), s.toString()).apply()
             status = parse(s)
         }
-        return payment(o.getJSONObject("payment"))
+        return payment(o.optJSONObject("payment") ?: throw ApiError("bad_reply", "Something went wrong. Please try again.", 0))
     }
 
     /** Everything this learner has paid for, newest first, plus modules given by MaliLab staff. */

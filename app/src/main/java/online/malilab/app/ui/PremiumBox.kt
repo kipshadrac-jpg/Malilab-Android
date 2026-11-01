@@ -132,7 +132,7 @@ private fun PremiumCard(
     var paymentId by remember { mutableIntStateOf(0) }
     var pollTick by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(phase) { onBusy(phase == "sending" || phase == "waiting") }
+    LaunchedEffect(phase) { onBusy(phase == "sending") }
 
     LaunchedEffect(paymentId, pollTick) {
         if (paymentId == 0) return@LaunchedEffect

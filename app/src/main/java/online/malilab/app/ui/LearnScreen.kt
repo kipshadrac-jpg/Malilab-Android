@@ -93,7 +93,7 @@ fun LearnScreen(active: Boolean, onOpen: (String) -> Unit) {
                             onAction = { attempt++ },
                         )
                     }
-                    items(s.items, key = { it.slug }) { m -> ModuleRow(m) { onOpen(m.slug) } }
+                    items(s.items.distinctBy { it.slug }, key = { it.slug }) { m -> ModuleRow(m) { onOpen(m.slug) } }
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }

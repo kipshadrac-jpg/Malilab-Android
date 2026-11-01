@@ -88,7 +88,7 @@ val INSTRUMENTS: List<InstrumentSpec> = listOf(
 )
 
 fun instrumentSpec(model: String): InstrumentSpec =
-    if (model == "compare") COMPARE_SPEC else INSTRUMENTS.first { it.model == model }
+    if (model == "compare") COMPARE_SPEC else INSTRUMENTS.firstOrNull { it.model == model } ?: INSTRUMENTS.first()
 
 val COMPARE_SPEC = InstrumentSpec(
     "compare", "Compare options", "Put the same money in different places for the same time and see the numbers side by side.", emptyList(),

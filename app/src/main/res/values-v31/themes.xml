@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MaliLab" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- The system start screen shows the MALILAB name instead of the app icon, which some phones leave blank. -->
+        <item name="android:windowSplashScreenBackground">@color/cream</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/brand_name</item>
+    </style>
+</resources>

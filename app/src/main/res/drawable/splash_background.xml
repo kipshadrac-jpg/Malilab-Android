@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What shows before the first screen is ready: the page colour with the MALILAB name in the middle. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/cream" />
+    <item android:width="288dp" android:height="288dp" android:gravity="center">
+        <bitmap android:src="@drawable/brand_name" android:gravity="fill" />
+    </item>
+</layer-list>

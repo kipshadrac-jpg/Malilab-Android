@@ -45,7 +45,7 @@ object Auth {
     /** Asks the website to email a 6-digit code. [purpose] is "register" or "reset". Returns the ticket to send back. */
     suspend fun askCode(email: String, purpose: String): String {
         val body = JSONObject().put("email", email.trim()).put("purpose", purpose)
-        return call("POST", "/api/v1/account/code/", body, false).getString("ticket")
+        return call("POST", "/api/v1/account/code/", body, false).optString("ticket").ifBlank { throw ApiError("bad_reply", "Something went wrong. Please try again.", 0) }
     }
 
     suspend fun verify(ticket: String, code: String, password: String) {
@@ -181,6 +181,9 @@ object Auth {
                 val json = try {
                     JSONObject(text)
                 } catch (e: Exception) {
+                    if (status in 200..299 && text.isNotBlank()) {
+                        throw ApiError("network", "MaliLab sent a reply this phone could not read. Check your connection and try again.", 0)
+                    }
                     JSONObject()
                 }
                 if (status == 402 && json.optString("error") == "locked") Billing.noteLocked()
